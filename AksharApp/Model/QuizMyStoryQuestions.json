@@ -1,0 +1,183 @@
+[
+  {
+    "sentence": "Mia walked along the beach with her mom. She bent down and picked up a shiny seashell.",
+    "question": "What did Mia find?",
+    "options": ["Seashell", "Mom"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Tom filled a bowl with food for his new puppy. The puppy wagged its tail happily.",
+    "question": "Who did Tom feed?",
+    "options": ["Puppy", "Tom"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Lily sat at her desk with her paints. She painted a big red heart on her paper.",
+    "question": "What did Lily paint?",
+    "options": ["Heart", "Desk"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ben packed his notebooks and pencils. He put them inside his new backpack.",
+    "question": "What did Ben carry?",
+    "options": ["Backpack", "Notebooks"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ava and her brother walked through the park after the rain. Suddenly, a bright rainbow appeared in the sky.",
+    "question": "What did Ava see?",
+    "options": ["Rainbow", "Rain"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Noah kept a small plant on his windowsill. He watered it every morning to help it grow.",
+    "question": "What did Noah water?",
+    "options": ["Plant", "Windowsill"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Emma opened her lunchbox at school. She shared her chocolate cookie with her friend.",
+    "question": "What did Emma share?",
+    "options": ["Cookie", "Friend"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Jack took out his crayons at the table. He used them to color a big dinosaur.",
+    "question": "What did Jack color?",
+    "options": ["Dinosaur", "Table"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Sara hugged her soft teddy bear before bed. It always made her feel safe.",
+    "question": "What did Sara hug?",
+    "options": ["Teddy bear", "Bed"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Leo followed a narrow trail in the forest. On the ground, he found a broken compass.",
+    "question": "What did Leo find?",
+    "options": ["Compass", "Trail"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Kim felt hungry during snack time. She ate a juicy red apple.",
+    "question": "What did Kim eat?",
+    "options": ["Apple", "Banana"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Max stacked his colorful blocks. He built a tall tower that almost reached the table edge.",
+    "question": "What did Max build?",
+    "options": ["Tower", "Table"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Nora saw dark clouds forming outside. She put on her yellow raincoat.",
+    "question": "What did Nora wear?",
+    "options": ["Raincoat", "Clouds"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "A tiny ladybug crawled onto Sam's hand. He watched it move slowly across his palm.",
+    "question": "What crawled on Sam's hand?",
+    "options": ["Ladybug", "Ant"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Olivia sat at her desk with markers. She drew a picture of a smiling sun.",
+    "question": "What did Olivia draw?",
+    "options": ["Sun", "Desk"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ethan ran across the yard with his friends. He kicked a red soccer ball toward the goal.",
+    "question": "What did Ethan kick?",
+    "options": ["Soccer ball", "Friends"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ruby cleaned her room in the afternoon. Under her bed, she found two shiny coins.",
+    "question": "What did Ruby find?",
+    "options": ["Coins", "Room"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "A small bird flew into a tall tree. It built a nest using sticks and leaves.",
+    "question": "What did the bird build?",
+    "options": ["Nest", "Tree"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Jake wanted to ride around the neighborhood. He put on his helmet and got on his bike.",
+    "question": "What did Jake ride?",
+    "options": ["Bike", "Helmet"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Mia walked beside the pond with her dad. She fed a duck some pieces of bread.",
+    "question": "What animal did Mia feed?",
+    "options": ["Duck", "Bread"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Lucas sat on his bed reading. His book was all about space and rockets.",
+    "question": "What did Lucas read about?",
+    "options": ["Space", "Bed"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Zoe walked through her garden in the morning sun. She picked a pretty pink flower.",
+    "question": "What did Zoe pick?",
+    "options": ["Flower", "Sun"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Sam packed his things for school. He made sure to bring his lunchbox.",
+    "question": "What did Sam bring?",
+    "options": ["Lunchbox", "School"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ella stood quietly near the garden. She watched a bright butterfly land on a leaf.",
+    "question": "What did Ella watch?",
+    "options": ["Butterfly", "Garden"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ryan lost his favorite toy in the yard. He drew a small map to help him find it.",
+    "question": "What did Ryan draw?",
+    "options": ["Map", "Toy"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Lily bought an ice cream cone after school. She accidentally dropped it on the ground.",
+    "question": "What did Lily drop?",
+    "options": ["Ice cream", "School"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Noah joined his family for a night walk. He held a flashlight to light the way.",
+    "question": "What did Noah hold?",
+    "options": ["Flashlight", "Family"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Grace visited the animal shelter with her mom. She gently petted a friendly kitten.",
+    "question": "What did Grace pet?",
+    "options": ["Kitten", "Mom"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ethan played in the sandbox with his friends. He found a shiny blue marble hidden in the sand.",
+    "question": "What did Ethan find?",
+    "options": ["Marble", "Sandbox"],
+    "correctIndex": 0
+  },
+  {
+    "sentence": "Ava sat in music class with her classmates. She heard a loud drum being played at the front.",
+    "question": "What did Ava hear?",
+    "options": ["Drum", "Music"],
+    "correctIndex": 0
+  }
+]
+

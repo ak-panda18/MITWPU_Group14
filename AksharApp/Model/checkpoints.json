@@ -1,0 +1,288 @@
+{
+  "checkpoints": [
+    {
+      "id": "TLRH_Story",
+      "content": [
+        {
+          "id": "TLRH_Check_1",
+          "text": "She   went   to   her   friends   and   held   out   the   grains   in   her   wing.\n”Who   will   help   me   plant   this   wheat?”   she   asked.",
+          "pageNumber": 3
+        },
+        {
+          "id": "TLRH_Check_2",
+          "text": "Finally,   the   warm,   delicious   smell   of   freshly   baked   bread   filled   the   air.   Her   three   friends   appeared   at   her   door   immediately.",
+          "pageNumber": 6
+        },
+        {
+          "id": "TLRH_Check_3",
+          "text": "And   she   called   for   her   little   chicks   and   they   ate   every   last   crumb   themselves.",
+          "pageNumber": 10
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TTLP_Story",
+      "content": [
+        {
+          "id": "TTLP_Check_1",
+          "text": "The   first   little   pig   was   a   bit   lazy   and   wanted   to   build   his   house   very   quickly   so   he   could   go   play.   He   met   a   farmer   pulling   a   cart   of   straw.",
+          "pageNumber": 3
+        },
+        {
+          "id": "TTLP_Check_2",
+          "text": "The   little   pig   squealed,\n”Not   by   the   hair   on   my   chinny   chin   chin!”\nThen   the   wolf   grinned   and   said:\n”Then   I'll   huff,   and   I'll   puff,   and   I'll   blow   your   house   down!”",
+          "pageNumber": 6
+        },
+        {
+          "id": "TTLP_Check_3",
+          "text": "He   had   just   finished   when   his   brother   came   running   up,   terrified,   and   they   both   hid   inside.\nSoon,   the   Big   Bad   Wolf   knocked   on   the   stick   door.",
+          "pageNumber": 9
+        },
+        {
+          "id": "TTLP_Check_4",
+          "text": "He   took   an   even   bigger   breath,   and   he   huffed   and   he   puffed,   and   he   blew   the   stick   house   down,   too!",
+          "pageNumber": 12
+        },
+        {
+          "id": "TTLP_Check_5",
+          "text": "He   roared:\n”Little   pigs,   little   pigs,   let   me   come   in!”\nThe   three   little   pigs   shouted   together:\n”Not   by   the   hair   on   our   chinny    chin   chins!”",
+          "pageNumber": 15
+        },
+        {
+          "id": "TTLP_Check_6",
+          "text": "The   Big   Bad   Wolf   was   tricky,   so   he   thought   of   a   different   plan.   He   climbed   up   onto   the   roof   to   come   down   the   chimney!",
+          "pageNumber": 18
+        },
+        {
+          "id": "TTLP_Check_7",
+          "text": "The   three   little   pigs   cheered!   They   had   learned   that   it's   always   best   to   be   hardworking.   They   lived   happily   ever   after   in   the   safe,   strong   brick   house.",
+          "pageNumber": 22
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TTH_Story",
+      "content": [
+        {
+          "id": "TTH_Check_1",
+          "text": "The   Tortoise   was   tired   of   the   Hare's   rude   bragging.   He   looked   up   calmly   and   said:\n”I   bet   I   can   beat   you   in   a   race!”",
+          "pageNumber": 3
+        },
+        {
+          "id": "TTH_Check_2",
+          "text": "The   Hare   took   off   like   a   lightning   bolt!    He   was   so   fast   that   he   quickly   became   a   tiny   white   blur   and   was   out   of   sight.",
+          "pageNumber": 6
+        },
+        {
+          "id": "TTH_Check_3",
+          "text": "The   Hare   yawned   and   thought,   ”That   Tortoise   is   probably   still   at   the   start   line!   I've   won   already.”",
+          "pageNumber": 9
+        },
+        {
+          "id": "TTH_Check_4",
+          "text": "He   finally   reached   the   spot   where   the   Hare   was   sleeping.   The   Tortoise   saw   him,   but   he   didn't   wake     him   up.   He   just   walked   silently   past   the   sleeping   Hare.",
+          "pageNumber": 12
+        },
+        {
+          "id": "TTH_Check_5",
+          "text": "The   Tortoise   simply   smiled   and   said   the   most   important   words   of   the   day:\n”Slow   and   steady   wins   the   race.”",
+          "pageNumber": 16
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TTC_Story",
+      "content": [
+        {
+          "id": "TTC_Check_1",
+          "text": "Finally,   the   Crow   spotted   something!   On   the   ground   below,   he   saw   a   jug   sitting   near   a   garden   wall.   He   flew   down   quickly   and   landed   right   on   the   edge   of   the   jug.",
+          "pageNumber": 3
+        },
+        {
+          "id": "TTC_Check_2",
+          "text": "The   Crow   dipped   his   head   to   drink,   but   the   neck   of   the   jug   was   too   long.   No   matter   how   hard   he   tried,   his   beak   could   not   reach   the   water   inside.",
+          "pageNumber": 5
+        },
+        {
+          "id": "TTC_Check_3",
+          "text": "The   Crow   suddenly   had   a   brilliant   idea!\n”If   my   beak   can't   reach   the   water,   maybe   I   can   bring   the   water   up   to   my   beak!”",
+          "pageNumber": 8
+        },
+        {
+          "id": "TTC_Check_4",
+          "text": "The   little   Crow   cheered   for   himself.   He   had   saved   himself   by   being   clever    and   persistent.   He   took   one   last   drink   and   flew   happily   away!",
+          "pageNumber": 12
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TLTM_Story",
+      "content": [
+        {
+          "id": "TLTM_Check_1",
+          "text": "The  little  Mouse  cried  out  in  a  tiny  voice:\n”Oh,  please,  mighty  King!  Forgive  me!  I  didn't  mean  to  do  it.  If  you  let  me  go,  I  promise,  I  will  never  forget  your  kindness.",
+          "imageURL": null,
+          "pageNumber": 3
+        },
+        {
+          "id": "TLTM_Check_2",
+          "text": "He  recognized  the  sound!  It  was  the  Lion  who  had  spared  his  life.\nThe  Mouse  bravely  scampered  over  and  saw  the  massive  Lion  tangled  and  caught  in  the  net.  The  Mouse  remembered  his  promise.",
+          "pageNumber": 6
+        },
+        {
+          "id": "TLTM_Check_3",
+          "text": "The  Lion  looked  down  at  the  tiny  Mouse  and  felt  very  grateful.  He  saw  that  even  the  smallest  friend  can  be  the  bravest  and  most  helpful.\nThe  two  unlikely  friends  learned  that  day  that  acts  of  kindness,  no  matter  how  small,  are  never  wasted.",
+          "pageNumber": 9
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TBCW_Story",
+      "content": [
+        {
+          "id": "TBCW_Check_1",
+          "text": "They  dropped  their  work  the  carpenter  dropped  his  hammer,  and  the  baker  dropped  his  dough  and  grabbed  their  sticks  and  tools.  They  ran  quickly  up  the  steep  hill  to  save  the  sheep.",
+          "pageNumber": 4
+        },
+        {
+          "id": "TBCW_Check_2",
+          "text": "The  villagers  were  furious!  They  warned  him  that  telling  lies  was  a  serious  thing.  They  walked  away,  deciding  they  would  never  listen  to  his  shouts  again.",
+          "pageNumber": 8
+        },
+        {
+          "id": "TBCW_Check_3",
+          "text": "The  boy  watched  helplessly  as  the  wolf  ran  away  with  several  sheep.  When  the  boy  walked  back  to  the  village,  crying  about  the  loss  of  the  sheep,\n”No  one  believes  a  liar,”  the  mayor  said.  ”Even  when  he  tells  the  truth.”",
+          "pageNumber": 11
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TUD_Story",
+      "content": [
+        {
+          "id": "TUD_Check_1",
+          "text": "The  ugly  duckling  was  pushed,  pecked,  and  laughed  at  by  the  other  birds  and  even  his  own  brothers  and  sisters.  No  one  wanted  to  play  with  him.\nThe  poor  duckling  was  so  sad  and  lonely.  He  felt  unwelcome  everywhere.",
+          "pageNumber": 3
+        },
+        {
+          "id": "TUD_Check_2",
+          "text": "Finally,  the  sun  began  to  shine,  and  the  snow  melted!  Spring  had  arrived.  \nThe  gray  duckling  felt  stronger  than  ever.  He  stretched  his  wings  and  found  himself  near  a  beautiful  garden  with  a  lovely  blue  pond.  He  saw  three  magnificent,  pure  white  birds  swimming  gracefully  on  the  water.",
+          "pageNumber": 6
+        },
+        {
+          "id": "TUD_Check_3",
+          "text": "The  three  magnificent  swans  swam  toward  him  and  gently  touched  him  with  their  beaks,  welcoming  him  as  one  of  their  own.  The  new  swan  lifted  his  long  neck  and  flew  off  with  his  new  friends,  happy  and  free.\nHe  realized  he  was  never  meant  to  be  a  duck  at  all.",
+          "pageNumber": 9
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TLG_Story",
+      "content": [
+        {
+          "id": "TLG_Check_1",
+          "text": "One  sunny  afternoon,  the  Grasshopper  was  relaxing,  singing  a  happy  song,  when  he  saw  a  long  line  of  Ants  struggling  to  carry  big  pieces  of  food.\nThe  Grasshopper  laughed  at  them.”Why  are  you  working  so  hard?”  he  called  out.  ”Come  and  relax  with  me!  It  is  a  beautiful  summer  day,  and  there  is  plenty  of  food  for  everyone!”",
+          "pageNumber": 2
+        },
+        {
+          "id": "TLG_Check_2",
+          "text": "The  bright,  warm  days  of  summer  and  fall  flew  by  quickly.  Soon,  the  cold  winds  began  to  blow,  and  the  ground  was  covered  in  white,  freezing  snow.  The  Grasshopper  found  himself  alone,  cold,  and  desperately  hungry.  All  the  green  plants  were  gone,  and  there  was  nothing  for  him  to  eat.  His  stomach  rumbled  with  emptiness.",
+          "pageNumber": 5
+        },
+        {
+          "id": "TLG_Check_3",
+          "text": "The  Ant  sighed.\n”Very  well.  If  you  sing  and  dance  when  you  should  be  working,  then  you  would  starve  when  you  should  be  eating.  We  worked  hard  for  our  food.”  But  the  ants  decided  to  share.\nThe  Grasshopper  had  learnt  a  lesson:  It  is  wise  to  prepare  today  for  the  needs  of  tomorrow.",
+          "pageNumber": 8
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TBS_Story",
+      "content": [
+        {
+          "id": "TBS_Check_1",
+          "text": "He knew his time was short, so he called all his sons to his side.\n”My sons,” he said weakly, \n”I have one final lesson for you. Go outside and bring me a bundle of sticks.”\nThe sons quickly went out and brought back a thick bundle of dry, straight sticks, tied tightly together with a strong cord.",
+          "pageNumber": 2
+        },
+        {
+          "id": "TBS_Check_2",
+          "text": "Then, the wise father told the youngest son to untie the cord that held the sticks together.\nThe son untied the cord, and the sticks fell loosely onto the bed.\n”Now,” the father said. ”Try to break them one by one.”\nThe sons laughed. It was easy! They took the loose sticks and, with almost no effort at all, they snapped them easily over their knees.",
+          "pageNumber": 4
+        },
+        {
+          "id": "TBS_Check_3",
+          "text": "The sons looked at the broken sticks and then at each other. They finally understood the true meaning of their father's lesson. They hugged each other and promised their father that they would never fight again and would always stick together.",
+          "pageNumber": 6
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TMD_Story",
+      "content": [
+        {
+          "id": "TMD_Check_1",
+          "text": "The old man heard this and thought, ”She is right! We shouldn't look foolish.”\nSo, he told his son to climb onto the Donkey's back. The old man and the Donkey walked on, and the son rode comfortable.\nThey hadn't gone far when they met a group of elderly men discussing the news.\n”Well, look at that disrespect!” grumbled one old man. ",
+          "pageNumber": 2
+        },
+        {
+          "id": "TMD_Check_2",
+          "text": "The old man sighed. He knew he didn't want to be cruel. \n”There is only one solution!” he thought.\nThe old man helped his son climb onto the Donkey behind him. Now, both the father and the son rode the Donkey.\nThey were almost to the market when they crossed the town square. A large crowd gathered to watch them. \n”Disgraceful!” shouted a woman with a basket. ”Look at that poor animal!",
+          "pageNumber": 4
+        },
+        {
+          "id": "TMD_Check_3",
+          "text": "The old man, sad and defeated, finally said to his son:\n”My son, we have learned a valuable lesson today. If you try to please everyone, you will please no one and you may even lose your donkey!”\nThey learned that you must listen to your own good sense, not just to what other people say.",
+          "pageNumber": 6
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TBE_Story",
+      "content": [
+        {
+          "id": "TBE_Check_1",
+          "text": "It curled and swayed in his hands.\n”Ah, I know exactly what an elephant is!” he declared. ”An elephant is just like a huge, powerful snake!”\nThe second man walked up and felt the Elephant's wide, flappy ear. He felt the soft, thin skin move when the Elephant breathed.\n”Nonsense!” the second man cried. ”An elephant is not a snake! It is exactly like a large, thin fan!”",
+          "pageNumber": 2
+        },
+        {
+          "id": "TBE_Check_2",
+          "text": "”To truly know the elephant,” he said, ”you must listen to your friends and put all of your different ideas together.” The five blind men listened to each other's descriptions and finally understood. They realized that by sharing their experiences, they could understand the whole, wonderful creature that was the Elephant.",
+          "pageNumber": 5
+        }
+      ],
+      "timesRead": 0
+    },
+    {
+      "id": "TGT_Story",
+      "content": [
+        {
+          "id": "TGT_Check_1",
+          "text": "King Midas didn't have to think twice! He immediately cried out:\n”I wish that everything I touch would turn into pure gold!”\nThe spirit warned the King,\n”Are you sure? This is a dangerous gift.”\nBut Midas was too greedy to listen.\n”Yes! That is my wish!”\nThe spirit sadly nodded and said,”The Golden Touch will be yours when the sun rises tomorrow.”\nThe next morning, King Midas woke up, very excited.",
+          "pageNumber": 2
+        },
+        {
+          "id": "TGT_Check_2",
+          "text": "Midas suddenly felt very hungry and very thirsty, but he couldn't eat or drink anything.\nJust then, his sweet daughter, Princess Marigold, ran in to hug her father good morning. Midas shouted,\n”Stop! Don't touch me!”\nBut it was too late. Princess Marigold threw her arms around her father. The moment she touched him, the lovely princess turned into a cold, silent, golden statue! King Midas was horrified! ",
+          "pageNumber": 4
+        },
+        {
+          "id": "TGT_Check_3",
+          "text": "King Midas rushed to the river and dove in. When he came out, he was overjoyed! He rushed back to the golden statue of his daughter, splashed her with the water, and watched as Princess Marigold sprang back to life!\nKing Midas never loved gold more than his family again. He had learned that true riches are found in the things you cannot buy.",
+          "pageNumber": 6
+        }
+      ],
+      "timesRead": 0
+    }
+  ],
+  "generated_at": "2025-11-28T00:00:00Z"
+}
