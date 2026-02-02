@@ -1,0 +1,157 @@
+[
+
+  {
+    "targetWord": "Dog",
+    "options": ["Fog", "Sun", "Cup", "Hat", "Man", "Box"],
+    "correctWords": ["Fog"]
+  },
+  {
+    "targetWord": "Fish",
+    "options": ["Dish", "Hat", "Log", "Pig", "Cup", "Sun"],
+    "correctWords": ["Dish"]
+  },
+  {
+    "targetWord": "Cup",
+    "options": ["Pup", "Log", "Bed", "Mat", "Dog", "Sun"],
+    "correctWords": ["Pup"]
+  },
+  {
+    "targetWord": "Top",
+    "options": ["Mop", "Dog", "Run", "Box", "Sun", "Hat"],
+    "correctWords": ["Mop"]
+  },
+  {
+    "targetWord": "Fan",
+    "options": ["Man", "Sun", "Fog", "Tip", "Dog", "Hat"],
+    "correctWords": ["Man"]
+  },
+  {
+    "targetWord": "Fox",
+    "options": ["Box", "Pig", "Car", "Mug", "Hat", "Sun"],
+    "correctWords": ["Box"]
+  },
+  {
+    "targetWord": "Snow",
+    "options": ["Go", "Cup", "Net", "Mop", "Hat", "Dog"],
+    "correctWords": ["Go"]
+  },
+  {
+    "targetWord": "Light",
+    "options": ["Night", "Sun", "Box", "Cup", "Dog", "Hat"],
+    "correctWords": ["Night"]
+  },
+  {
+    "targetWord": "Bag",
+    "options": ["Tag", "Cup", "Hat", "Box", "Dog", "Sun"],
+    "correctWords": ["Tag"]
+  },
+  {
+    "targetWord": "Pig",
+    "options": ["Wig", "Cup", "Mat", "Sun", "Dog", "Hat"],
+    "correctWords": ["Wig"]
+  },
+
+
+  {
+    "targetWord": "Cat",
+    "options": ["Rat", "Hat", "Cup", "Sun", "Bag", "Dog"],
+    "correctWords": ["Rat", "Hat"]
+  },
+  {
+    "targetWord": "Sun",
+    "options": ["Run", "Fun", "Box", "Bed", "Tap", "Cup"],
+    "correctWords": ["Run", "Fun"]
+  },
+  {
+    "targetWord": "Cake",
+    "options": ["Lake", "Bake", "Cup", "Man", "Dig", "Sun"],
+    "correctWords": ["Lake", "Bake"]
+  },
+  {
+    "targetWord": "Hill",
+    "options": ["Fill", "Mill", "Top", "Bag", "Pan", "Sun"],
+    "correctWords": ["Fill", "Mill"]
+  },
+  {
+    "targetWord": "Tree",
+    "options": ["Bee", "See", "Cup", "Jam", "Dog", "Hat"],
+    "correctWords": ["Bee", "See"]
+  },
+  {
+    "targetWord": "Boat",
+    "options": ["Goat", "Coat", "Bed", "Dig", "Sun", "Hat"],
+    "correctWords": ["Goat", "Coat"]
+  },
+  {
+    "targetWord": "Star",
+    "options": ["Car", "Jar", "Sun", "Dig", "Leg", "Cup"],
+    "correctWords": ["Car", "Jar"]
+  },
+  {
+    "targetWord": "Bear",
+    "options": ["Pear", "Wear", "Hat", "Dog", "Run", "Cup"],
+    "correctWords": ["Pear", "Wear"]
+  },
+  {
+    "targetWord": "Clock",
+    "options": ["Rock", "Sock", "Pig", "Man", "Cup", "Sun"],
+    "correctWords": ["Rock", "Sock"]
+  },
+  {
+    "targetWord": "Rain",
+    "options": ["Train", "Brain", "Sun", "Cup", "Dog", "Hat"],
+    "correctWords": ["Train", "Brain"]
+  },
+ 
+
+  {
+    "targetWord": "Cat",
+    "options": ["Rat", "Mat", "Hat", "Cup", "Sun", "Dog"],
+    "correctWords": ["Rat", "Mat", "Hat"]
+  },
+  {
+    "targetWord": "Sun",
+    "options": ["Run", "Fun", "Bun", "Box", "Bed", "Tap"],
+    "correctWords": ["Run", "Fun", "Bun"]
+  },
+  {
+    "targetWord": "Hill",
+    "options": ["Fill", "Mill", "Pill", "Top", "Bag", "Pan"],
+    "correctWords": ["Fill", "Mill", "Pill"]
+  },
+  {
+    "targetWord": "Boat",
+    "options": ["Goat", "Coat", "Float", "Bed", "Dig", "Sun"],
+    "correctWords": ["Goat", "Coat", "Float"]
+  },
+  {
+    "targetWord": "Pig",
+    "options": ["Wig", "Dig", "Big", "Cup", "Mat", "Sun"],
+    "correctWords": ["Wig", "Dig", "Big"]
+  },
+  {
+    "targetWord": "Star",
+    "options": ["Car", "Jar", "Far", "Dig", "Leg", "Cup"],
+    "correctWords": ["Car", "Jar", "Far"]
+  },
+  {
+    "targetWord": "Cup",
+    "options": ["Pup", "Sup", "Up", "Log", "Bed", "Mat"],
+    "correctWords": ["Pup", "Sup", "Up"]
+  },
+  {
+    "targetWord": "Top",
+    "options": ["Mop", "Hop", "Pop", "Dog", "Run", "Box"],
+    "correctWords": ["Mop", "Hop", "Pop"]
+  },
+  {
+    "targetWord": "Fan",
+    "options": ["Man", "Pan", "Can", "Sun", "Fog", "Tip"],
+    "correctWords": ["Man", "Pan", "Can"]
+  },
+  {
+    "targetWord": "Light",
+    "options": ["Night", "Kite", "Fight", "Sun", "Box", "Cup"],
+    "correctWords": ["Night", "Kite", "Fight"]
+  }
+]
