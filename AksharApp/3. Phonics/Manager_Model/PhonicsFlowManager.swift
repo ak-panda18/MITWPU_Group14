@@ -4,28 +4,22 @@ class PhonicsFlowManager {
     static let shared = PhonicsFlowManager()
     
     private let storageKey = "phonics_flow_state_v1"
-    
-    // State Variables
     private var isFirstRun: Bool = true
     private var currentIndex: Int = 0
     private var shuffledIndices: [Int] = []
     
-    private init() {
+    init() {
         loadState()
     }
     
     // MARK: - Public API
-    
     func getCurrentExercise() -> ExerciseType {
         let allExercises = ExerciseType.allCases
         
         if isFirstRun {
-            // Mode 1: Sequential (0, 1, 2, 3, 4)
-            // Safety check to ensure we don't crash if index is weird
             let safeIndex = clamp(currentIndex, max: allExercises.count - 1)
             return allExercises[safeIndex]
         } else {
-            // Mode 2: Randomized
             if shuffledIndices.isEmpty {
                 reshuffle()
             }
@@ -38,8 +32,6 @@ class PhonicsFlowManager {
     func advance() {
         let total = ExerciseType.allCases.count
         currentIndex += 1
-        
-        // Check if we finished the full set of 5
         if currentIndex >= total {
             finishCycle()
         } else {
@@ -48,17 +40,13 @@ class PhonicsFlowManager {
     }
     
     // MARK: - Private Logic
-    
     private func finishCycle() {
         currentIndex = 0
         
         if isFirstRun {
-            // Congratulations, you finished the sequential run!
-            // Now switch to random mode forever.
             isFirstRun = false
         }
         
-        // Prepare a new shuffle for the next cycle
         reshuffle()
         saveState()
     }
@@ -73,7 +61,6 @@ class PhonicsFlowManager {
     }
     
     // MARK: - Persistence
-    
     private func saveState() {
         let data: [String: Any] = [
             "isFirstRun": isFirstRun,
@@ -85,7 +72,6 @@ class PhonicsFlowManager {
     
     private func loadState() {
         guard let data = UserDefaults.standard.dictionary(forKey: storageKey) else {
-            // First time ever: Setup defaults
             reshuffle()
             return
         }

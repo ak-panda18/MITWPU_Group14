@@ -26,6 +26,10 @@ class WritingPreviewViewController: UIViewController {
     @IBOutlet var currentNumberLabel: UILabel!
     @IBOutlet var currentWordLabel: UILabel!
     
+    @IBOutlet weak var letterProgressView: UIProgressView!
+    @IBOutlet var numberProgressView: UIProgressView!
+    @IBOutlet weak var wordProgressView: UIProgressView!
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,10 +39,19 @@ class WritingPreviewViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Note: We don't need 'sync' methods anymore. The Manager is the single source of truth.
-        updateCurrentLetterUI()
-        updateCurrentNumberUI()
-        updateCurrentWordUI()
+        bindUI()
+    }
+    // MARK: - UI Binding
+    private func bindUI() {
+        let manager = WritingGameplayManager.shared
+        
+        currentLetterLabel.text = manager.currentLetterDisplay()
+        currentNumberLabel.text = manager.currentNumberDisplay()
+        currentWordLabel.text = manager.currentWordDisplay()
+        
+        letterProgressView.progress = manager.letterProgress()
+        numberProgressView.progress = manager.numberProgress()
+        wordProgressView.progress = manager.wordProgress()
     }
     
     // MARK: - Setup
@@ -68,42 +81,6 @@ class WritingPreviewViewController: UIViewController {
         numberCardView.addGestureRecognizer(numberTap)
         numberCardView.isUserInteractionEnabled = true
     }
-    
-    private func updateCurrentWordUI() {
-        // 1. Get Last Active Category
-        let categoryString = WritingGameplayManager.shared.lastActiveCategory
-        
-        // 2. Load Words
-        let allWords = TracingWordLoader.loadWords()
-        let categoryWords = allWords.words(for: categoryString)
-        
-        guard !categoryWords.isEmpty else {
-            currentWordLabel.text = "--"
-            return
-        }
-        
-        // 3. Get Active Index
-        let activeIndex = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryString)
-        let safeIndex = min(activeIndex, categoryWords.count - 1)
-        
-        currentWordLabel.text = categoryWords[safeIndex].word
-    }
-
-    private func updateCurrentLetterUI() {
-        let index = WritingGameplayManager.shared.getHighestUnlockedIndex(category: "letters")
-        
-        guard index < 26 else {
-            currentLetterLabel.text = "Z"
-            return
-        }
-        let letter = String(UnicodeScalar(65 + index)!)
-        currentLetterLabel.text = letter
-    }
-    
-    private func updateCurrentNumberUI() {
-        let index = WritingGameplayManager.shared.getHighestUnlockedIndex(category: "numbers")
-        currentNumberLabel.text = "\(index)"
-    }
 
     // MARK: - Actions
     @IBAction func backToHomeTapped(_ sender: UIButton) {
@@ -121,12 +98,14 @@ class WritingPreviewViewController: UIViewController {
     // MARK: - Navigation Helpers (Letters/Numbers)
     private func openLatest(contentType: WritingContentType) {
             let categoryKey = (contentType == .letters) ? "letters" : "numbers"
+        
+        WritingGameplayManager.shared.lastActiveCategory = categoryKey
+        
             let index = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
             let manager = WritingGameplayManager.shared
             let storyboard = UIStoryboard(name: "Main", bundle: nil)
             let vc: UIViewController
 
-            // Resume Logic (Same as WordsCategories)
             if manager.loadTwoDrawings(index: index, category: categoryKey) != nil {
                 let c = storyboard.instantiateViewController(withIdentifier: "SixLetterTraceVC") as! SixLetterTraceViewController
                 c.contentType = contentType

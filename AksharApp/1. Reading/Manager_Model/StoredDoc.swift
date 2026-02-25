@@ -3,13 +3,12 @@ import Foundation
 struct StoredDoc: Codable, Equatable {
     var id: String
     var title: String
-    var createdDate: Date // Changed from String to Date
+    var createdDate: Date
     var fileName: String
     var thumbnailFileName: String
     var ocrTextFileName: String?
     var pagesFileName: String?
     
-    // Computed property: Keeps your UI code working without changes
     var dateText: String {
         return DateFormatter.localizedString(from: createdDate, dateStyle: .medium, timeStyle: .none)
     }
@@ -25,7 +24,6 @@ struct StoredDoc: Codable, Equatable {
         self.pagesFileName = pagesFileName
     }
     
-    // MARK: - Migration Init (Prevents Crashes)
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
@@ -36,7 +34,6 @@ struct StoredDoc: Codable, Equatable {
         ocrTextFileName = try container.decodeIfPresent(String.self, forKey: .ocrTextFileName)
         pagesFileName = try container.decodeIfPresent(String.self, forKey: .pagesFileName)
         
-        // Try to decode as Date (New Format). If fails, use Date() (Old Format Fallback)
         if let date = try? container.decode(Date.self, forKey: .createdDate) {
             createdDate = date
         } else {

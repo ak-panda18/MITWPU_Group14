@@ -4,14 +4,7 @@ class AnalyticsViewController: UIViewController,
                                 UICollectionViewDelegate,
                                 UICollectionViewDataSource,
                                UICollectionViewDelegateFlowLayout {
-    
-    private struct PhonicsStats {
-        let soundAccuracy: Int
-        let quizAccuracy: Int
-        let rhymeAccuracy: Int
-        let wordAccuracy: Int
-        let fluencyWPM: Int
-    }
+
     var selectedStats: DailyStats?
     private var selectedGraphTitle: String?
     private var selectedGraphData: [AccuracyPoint] = []
@@ -69,82 +62,17 @@ class AnalyticsViewController: UIViewController,
         print("Writing sessions:", analyticsData.writingSessions.count)
     }
     
-    private func computePhonicsStats() -> PhonicsStats {
-        let sessions = filteredPhonicsSessions()
-        
-        return PhonicsStats(
-            soundAccuracy: accuracy(for: "sound_detector", sessions: sessions),
-            quizAccuracy: accuracy(for: "quiz_my_story", sessions: sessions),
-            rhymeAccuracy: accuracy(for: "rhyme_words", sessions: sessions),
-            wordAccuracy: accuracy(for: "word_builder", sessions: sessions),
-            fluencyWPM: fluencyWPM(sessions: sessions)
-        )
-    }
-    
-    private func accuracy(for type: String, sessions: [PhonicsSessionData]) -> Int {
-        let filtered = sessions.filter {
-            $0.exerciseType == type
-        }
-        
-        let totalCorrect = filtered.reduce(0) { $0 + $1.correctCount }
-        let totalAttempts = filtered.reduce(0) { $0 + $1.totalAttempts }
-        
-        guard totalAttempts > 0 else { return 0 }
-        
-        return Int((Double(totalCorrect) / Double(totalAttempts)) * 100)
-    }
-    
-    private func fluencyWPM(sessions: [PhonicsSessionData]) -> Int {
-        
-        let fluencySessions = sessions.filter {
-            $0.exerciseType == "fluency_drill"
-        }
-        
-        let totalCorrect = fluencySessions.reduce(0) {
-            $0 + $1.correctCount
-        }
-        
-        let totalDuration = fluencySessions.reduce(0.0) { result, session in
-            guard let end = session.endTime else { return result }
-            return result + end.timeIntervalSince(session.startTime)
-        }
-        
-        guard totalDuration > 0 else { return 0 }
-        
-        let minutes = totalDuration / 60
-        return Int(Double(totalCorrect) / minutes)
-    }
-    private func average(from sessions: [WritingSessionData], keyPath: KeyPath<WritingSessionData, Int>) -> Int? {
-        let relevantSessions = sessions.filter { $0[keyPath: keyPath] > 0 }
-        guard !relevantSessions.isEmpty else { return nil }
-        let total = relevantSessions.reduce(0) { $0 + $1[keyPath: keyPath] }
-        return total / relevantSessions.count
-    }
-    
-    private func comparisonDelta(
-        current: Int?,
-        previous: Int?
-    ) -> Int? {
-        guard let current, let previous else { return nil }
-        return current - previous
-    }
-    
     private func getCutoffDate() -> Date {
         let now = Date()
         let calendar = Calendar.current
-        // If weekly, go back 7 days. If monthly, go back 30 days.
         let days = isWeeklyView ? -7 : -30
         return calendar.date(byAdding: .day, value: days, to: now)!
     }
-    
-    private func hasPhonicsDataForSelectedRange() -> Bool {
-        !filteredPhonicsSessions().isEmpty
-    }
 
     private func filteredPhonicsSessions() -> [PhonicsSessionData] {
-            // FAST: Core Data filters by date automatically
             return AnalyticsStore.shared.fetchPhonicsSessions(from: getCutoffDate())
         }
+    
     private func filteredWritingSessions() -> [WritingSessionData] {
             return AnalyticsStore.shared.fetchWritingSessions(from: getCutoffDate())
         }
@@ -232,70 +160,6 @@ class AnalyticsViewController: UIViewController,
         }
     }
     
-    private func averageLettersAccuracy() -> Int {
-        let sessions = analyticsData.writingSessions
-        guard !sessions.isEmpty else { return 0 }
-        
-        let total = sessions.reduce(0) { $0 + $1.lettersAccuracy }
-        return total / sessions.count
-    }
-    
-    private func averageWordsAccuracy() -> Int {
-        let sessions = analyticsData.writingSessions
-        guard !sessions.isEmpty else { return 0 }
-        
-        let total = sessions.reduce(0) { $0 + $1.wordsAccuracy }
-        return total / sessions.count
-    }
-    
-    private func averageNumbersAccuracy() -> Int {
-        let sessions = analyticsData.writingSessions
-        guard !sessions.isEmpty else { return 0 }
-        
-        let total = sessions.reduce(0) { $0 + $1.numbersAccuracy }
-        return total / sessions.count
-    }
-    
-    private func writingGraphData(
-        keyPath: KeyPath<WritingSessionData, Int>
-    ) -> [AccuracyPoint] {
-        let sessions = filteredWritingSessions()
-        let relevantSessions = sessions.filter { $0[keyPath: keyPath] > 0 }
-        let calendar = Calendar.current
-        
-        let groupKey: (Date) -> Date = { date in
-            if self.isWeeklyView {
-                return calendar.startOfDay(for: date)
-            } else {
-                return calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
-            }
-        }
-        let groupedSessions = Dictionary(grouping: relevantSessions) { session in
-            groupKey(session.date)
-        }
-        let sortedDates = groupedSessions.keys.sorted()
-        
-        let points = sortedDates.map { date -> AccuracyPoint in
-            let sessionsInGroup = groupedSessions[date]!
-            let total = sessionsInGroup.reduce(0) { $0 + $1[keyPath: keyPath] }
-            let average = total / sessionsInGroup.count
-            let dateFormatter = DateFormatter()
-            if self.isWeeklyView {
-                dateFormatter.dateFormat = "E"
-            } else {
-                dateFormatter.dateFormat = "d MMM"
-            }
-            let label = dateFormatter.string(from: date)
-            
-            return AccuracyPoint(
-                dateLabel: label,
-                value: average
-            )
-        }
-        
-        return points
-    }
-    
     private func showGraph(title: String, data: [AccuracyPoint]) {
         selectedGraphTitle = title
         selectedGraphData = data
@@ -329,12 +193,20 @@ class AnalyticsViewController: UIViewController,
     }
     
     private func refreshDataBasedOnSegment() {
+
+        let attempts = CheckpointHistoryManager.shared.getAllAttempts()
+
         if isWeeklyView {
-            loadWeeklyStats()
+            recentDailyStats = AnalyticsAggregator.weeklyCheckpointStats(
+                attempts: attempts
+            )
         } else {
-            loadMonthlyStats()
+            recentDailyStats = AnalyticsAggregator.monthlyCheckpointStats(
+                attempts: attempts
+            )
         }
-        collectionView.reloadItems(at: [IndexPath(item: 3, section: 0)])
+
+        collectionView.reloadData()
     }
     
     @IBAction func backButtonTapped(_ sender: UIButton) {
@@ -356,71 +228,7 @@ class AnalyticsViewController: UIViewController,
             return .systemGreen
         }
     }
-    
-    // MARK: - Data Loading Logic
-    
-    private func loadWeeklyStats() {
-        let allAttempts = CheckpointHistoryManager.shared.getAllAttempts()
-        var groupedData: [Date: [Int]] = [:]
-        for attempt in allAttempts {
-            let dateKey = Calendar.current.startOfDay(for: attempt.timestamp)
-            if groupedData[dateKey] != nil {
-                groupedData[dateKey]?.append(attempt.accuracy)
-            } else {
-                groupedData[dateKey] = [attempt.accuracy]
-            }
-        }
-        var processedList: [DailyStats] = []
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "d MMM yyyy"
-        
-        let sortedDates = groupedData.keys.sorted(by: { $0 > $1 })
-        
-        for date in sortedDates {
-            if let scores = groupedData[date] {
-                let total = scores.reduce(0, +)
-                let average = total / scores.count
-                let dateString = dateFormatter.string(from: date)
-                
-                processedList.append(DailyStats(date: date, accuracy: average, formattedDate: dateString))
-            }
-        }
-        
-        self.recentDailyStats = Array(processedList.prefix(7))
-        collectionView.reloadData()
-    }
-    private func loadMonthlyStats() {
-        let allAttempts = CheckpointHistoryManager.shared.getAllAttempts()
-        let calendar = Calendar.current
-        let now = Date()
-        var weeklyBuckets: [[Int]] = [[], [], [], []]
-        for attempt in allAttempts {
-            guard let daysAgo = calendar.dateComponents([.day], from: attempt.timestamp, to: now).day else { continue }
-            if daysAgo < 7 {
-                weeklyBuckets[3].append(attempt.accuracy)
-            } else if daysAgo < 14 {
-                weeklyBuckets[2].append(attempt.accuracy)
-            } else if daysAgo < 21 {
-                weeklyBuckets[1].append(attempt.accuracy)
-            } else if daysAgo < 28 {
-                weeklyBuckets[0].append(attempt.accuracy)
-            }
-        }
-        
-        let labels = ["3 Weeks Ago", "2 Weeks Ago", "Last Week", "This Week"]
-        var monthlyList: [DailyStats] = []
-        for i in 0...3 {
-            let scores = weeklyBuckets[i]
-            if !scores.isEmpty {
-                let average = scores.reduce(0, +) / scores.count
-                monthlyList.append(DailyStats(date: Date(), accuracy: average, formattedDate: labels[i]))
-            }
-        }
-        
-        self.recentDailyStats = monthlyList
-        collectionView.reloadData()
-    }
-    
+
     // MARK: - Navigation Functions
     func showCheckpointDetails(for stats: DailyStats) {
         selectedStats = stats
@@ -467,74 +275,112 @@ extension AnalyticsViewController {
             return collectionView.dequeueReusableCell(withReuseIdentifier: "WritingAccuracyTitleCell", for: indexPath)
 
         case 1:
-                    let cell = collectionView.dequeueReusableCell(
-                        withReuseIdentifier: "WritingAccuracyViewCell",
-                        for: indexPath
-                    ) as! WritingAccuracyViewCell
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: "WritingAccuracyViewCell",
+                for: indexPath
+            ) as! WritingAccuracyViewCell
 
-                    let current = filteredWritingSessions()
-                    let previous = previousWritingSessions()
+            let current = filteredWritingSessions()
+            let previous = previousWritingSessions()
 
-                    // 1. Calculate Averages
-                    let currentLetters = average(from: current, keyPath: \.lettersAccuracy)
-                    let previousLetters = average(from: previous, keyPath: \.lettersAccuracy)
-                    
-                    let currentWords = average(from: current, keyPath: \.wordsAccuracy)
-                    let previousWords = average(from: previous, keyPath: \.wordsAccuracy)
-                    
-                    let currentNumbers = average(from: current, keyPath: \.numbersAccuracy)
-                    let previousNumbers = average(from: previous, keyPath: \.numbersAccuracy)
+            let currentLetters = AnalyticsAggregator.latestScore(
+                from: analyticsData.writingSessions,
+                contentType: .letters
+            )
+            let previousLetters = AnalyticsAggregator.latestScore(
+                from: analyticsData.writingSessions
+,
+                contentType: .letters
+            )
 
-            let deltaData: (Int?, Int?) -> (text: String, color: UIColor) = { curr, prev in
-                            guard let c = curr else { return ("--", .gray) }
-                            let p = prev ?? 0 // Treat new user (nil previous) as 0
-                            
-                            let diff = c - p
-                            let symbol = diff >= 0 ? "↑" : "↓"
-                            let text = "\(symbol) \(abs(diff))%"
-                            let color: UIColor = diff >= 0 ? .systemGreen : .systemRed
-                            
-                            return (text, color)
-                        }
-                        
-                        let lData = deltaData(currentLetters, previousLetters)
-                        let wData = deltaData(currentWords, previousWords)
-                        let nData = deltaData(currentNumbers, previousNumbers)
-                        
-                        let percentText: (Int?) -> String = { $0 != nil ? "\($0!)%" : "--" }
-                        let comparisonLabel = isWeeklyView ? "\nvs last week" : "\nvs last month"
-                        cell.configure(
-                            letters: percentText(currentLetters),
-                            lettersDelta: lData.text,
-                            lettersColor: lData.color,
-                            lettersComparisonText: comparisonLabel,
+            let currentWords = AnalyticsAggregator.latestScore(
+                from: current,
+                contentType: .words
+            )
 
-                            words: percentText(currentWords),
-                            wordsDelta: wData.text,
-                            wordsColor: wData.color,
-                            wordsComparisonText: comparisonLabel,
+            let previousWords = AnalyticsAggregator.latestScore(
+                from: previous,
+                contentType: .words
+            )
 
-                            numbers: percentText(currentNumbers),
-                            numbersDelta: nData.text,
-                            numbersColor: nData.color,
-                            numbersComparisonText: comparisonLabel
-                        )
-                        cell.setColors(
-                            letters: colorForScore(currentLetters),
-                            words: colorForScore(currentWords),
-                            numbers: colorForScore(currentNumbers)
-                        )
-                    cell.onLettersTapped = { [weak self] in
-                        self?.showGraph(title: "Letters Accuracy", data: self?.writingGraphData(keyPath: \.lettersAccuracy) ?? [])
-                    }
-                    cell.onWordsTapped = { [weak self] in
-                        self?.showGraph(title: "Words Accuracy", data: self?.writingGraphData(keyPath: \.wordsAccuracy) ?? [])
-                    }
-                    cell.onNumbersTapped = { [weak self] in
-                        self?.showGraph(title: "Numbers Accuracy", data: self?.writingGraphData(keyPath: \.numbersAccuracy) ?? [])
-                    }
+            let currentNumbers = AnalyticsAggregator.latestScore(
+                from: analyticsData.writingSessions,
+                contentType: .numbers
+            )
+            let previousNumbers = AnalyticsAggregator.latestScore(
+                from: analyticsData.writingSessions,
+                contentType: .numbers
+            )
 
-                    return cell
+
+            let delta: (Int?, Int?) -> (String, UIColor) = { curr, prev in
+                guard let c = curr else { return ("--", .gray) }
+                let p = prev ?? 0
+                let diff = c - p
+                let symbol = diff >= 0 ? "↑" : "↓"
+                return ("\(symbol) \(abs(diff))%", diff >= 0 ? .systemGreen : .systemRed)
+            }
+
+            let percent: (Int?) -> String = { $0 != nil ? "\($0!)%" : "--" }
+
+            let comparisonText = isWeeklyView ? "\nvs last week" : "\nvs last month"
+
+            let lDelta = delta(currentLetters, previousLetters)
+            let wDelta = delta(currentWords, previousWords)
+            let nDelta = delta(currentNumbers, previousNumbers)
+
+            cell.configure(
+                letters: percent(currentLetters),
+                lettersDelta: lDelta.0,
+                lettersColor: lDelta.1,
+                lettersComparisonText: comparisonText,
+                words: percent(currentWords),
+                wordsDelta: wDelta.0,
+                wordsColor: wDelta.1,
+                wordsComparisonText: comparisonText,
+                numbers: percent(currentNumbers),
+                numbersDelta: nDelta.0,
+                numbersColor: nDelta.1,
+                numbersComparisonText: comparisonText
+            )
+            
+            cell.setColors(
+                letters: colorForScore(currentLetters),
+                words: colorForScore(currentWords),
+                numbers: colorForScore(currentNumbers)
+            )
+
+            cell.onLettersTapped = { [weak self] in
+                guard let self else { return }
+                let data = AnalyticsAggregator.writingGraphData(
+                    sessions: current,
+                    keyPath: \.lettersAccuracy,
+                    isWeekly: self.isWeeklyView
+                )
+                self.showGraph(title: "Letters Accuracy", data: data)
+            }
+
+            cell.onWordsTapped = { [weak self] in
+                guard let self else { return }
+                let data = AnalyticsAggregator.writingGraphData(
+                    sessions: current,
+                    keyPath: \.wordsAccuracy,
+                    isWeekly: self.isWeeklyView
+                )
+                self.showGraph(title: "Words Accuracy", data: data)
+            }
+
+            cell.onNumbersTapped = { [weak self] in
+                guard let self else { return }
+                let data = AnalyticsAggregator.writingGraphData(
+                    sessions: current,
+                    keyPath: \.numbersAccuracy,
+                    isWeekly: self.isWeeklyView
+                )
+                self.showGraph(title: "Numbers Accuracy", data: data)
+            }
+
+            return cell
         case 2:
             return collectionView.dequeueReusableCell(withReuseIdentifier: "ReadingStatisticsTitleCell", for: indexPath)
 
@@ -568,15 +414,16 @@ extension AnalyticsViewController {
                 for: indexPath
             ) as! PhonicsStatisticsViewCell
 
-            let phonics = computePhonicsStats()
-            let hasData = hasPhonicsDataForSelectedRange()
+            let sessions = filteredPhonicsSessions()
+
+            let overview = AnalyticsAggregator.phonicsOverview(sessions: sessions)
 
             cell.configure(
-                sound: hasData ? "\(phonics.soundAccuracy)%" : "--",
-                quiz: hasData ? "\(phonics.quizAccuracy)%" : "--",
-                rhyme: hasData ? "\(phonics.rhymeAccuracy)%" : "--",
-                word: hasData ? "\(phonics.wordAccuracy)%" : "--",
-                fluency: hasData ? "\(phonics.fluencyWPM)" : "--"
+                sound: overview.sound.map { "\($0)%" } ?? "--",
+                quiz: overview.quiz.map { "\($0)%" } ?? "--",
+                rhyme: overview.rhyme.map { "\($0)%" } ?? "--",
+                word: overview.word.map { "\($0)%" } ?? "--",
+                fluency: overview.fluency.map { "\($0)" } ?? "--"
             )
 
             return cell

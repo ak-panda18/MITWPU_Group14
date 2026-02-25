@@ -6,10 +6,9 @@ final class AnalyticsStore {
     static let shared = AnalyticsStore()
     private let coreData = CoreDataStack.shared
     
-    private init() {}
+    init() {}
 
     // MARK: - WRITING SESSIONS
-    
     func appendWritingSession(_ session: WritingSessionData) {
         let context = coreData.context
         let entity = WritingSessionEntity(context: context)
@@ -40,7 +39,6 @@ final class AnalyticsStore {
         } catch { print("Core Data Error: \(error)") }
     }
     
-    // OPTIMIZED: Added 'from date' parameter
     func fetchWritingSessions(from date: Date? = nil) -> [WritingSessionData] {
         let request: NSFetchRequest<WritingSessionEntity> = WritingSessionEntity.fetchRequest()
         if let startDate = date {
@@ -55,7 +53,6 @@ final class AnalyticsStore {
     }
 
     // MARK: - PHONICS SESSIONS
-    
     func appendPhonicsSession(_ session: PhonicsSessionData) {
         let context = coreData.context
         let entity = PhonicsSessionEntity(context: context)
@@ -70,7 +67,6 @@ final class AnalyticsStore {
         coreData.saveContext()
     }
     
-    // OPTIMIZED: Added 'from date' parameter
     func fetchPhonicsSessions(from date: Date? = nil) -> [PhonicsSessionData] {
         let request: NSFetchRequest<PhonicsSessionEntity> = PhonicsSessionEntity.fetchRequest()
         if let startDate = date {
@@ -85,7 +81,6 @@ final class AnalyticsStore {
     }
 
     // MARK: - READING SESSIONS
-    
     func appendReadingSession(_ session: ReadingSessionData) {
         let context = coreData.context
         let entity = ReadingSessionEntity(context: context)
@@ -108,7 +103,6 @@ final class AnalyticsStore {
         }
     }
     
-    // OPTIMIZED: Added 'from date' parameter
     func fetchReadingSessions(from date: Date? = nil) -> [ReadingSessionData] {
         let request: NSFetchRequest<ReadingSessionEntity> = ReadingSessionEntity.fetchRequest()
         if let startDate = date {
@@ -123,7 +117,6 @@ final class AnalyticsStore {
     }
 
     // MARK: - CHECKPOINT RESULTS
-    
     func appendCheckpointResult(_ result: ReadingCheckpointResultData) {
         let context = coreData.context
         let entity = CheckpointResultEntity(context: context)
@@ -144,6 +137,7 @@ final class AnalyticsStore {
             return entities.map { mapCheckpointResultToStruct($0) }
         } catch { return [] }
     }
+    
     // MARK: - Migration Helper
         func migrateJSONToCoreData() {
             let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("analytics.json")
@@ -158,9 +152,7 @@ final class AnalyticsStore {
                 decoder.dateDecodingStrategy = .iso8601
                 let legacyData = try decoder.decode(AnalyticsData.self, from: data)
                 
-                // 1. Migrate Writing
                 for session in legacyData.writingSessions {
-                    // Check if exists before adding to avoid duplicates
                     let req: NSFetchRequest<WritingSessionEntity> = WritingSessionEntity.fetchRequest()
                     req.predicate = NSPredicate(format: "id == %@", session.id as CVarArg)
                     if (try? coreData.context.count(for: req)) == 0 {
@@ -168,7 +160,6 @@ final class AnalyticsStore {
                     }
                 }
                 
-                // 2. Migrate Reading
                 for session in legacyData.readingSessions {
                     let req: NSFetchRequest<ReadingSessionEntity> = ReadingSessionEntity.fetchRequest()
                     req.predicate = NSPredicate(format: "id == %@", session.id as CVarArg)
@@ -177,7 +168,6 @@ final class AnalyticsStore {
                     }
                 }
                 
-                // 3. Migrate Phonics
                 for session in legacyData.phonicsSessions {
                     let req: NSFetchRequest<PhonicsSessionEntity> = PhonicsSessionEntity.fetchRequest()
                     req.predicate = NSPredicate(format: "id == %@", session.id as CVarArg)
@@ -186,7 +176,6 @@ final class AnalyticsStore {
                     }
                 }
                 
-                // 4. Delete old file so we don't migrate again
                 try FileManager.default.removeItem(at: fileURL)
                 print("Analytics: Migration complete & legacy file deleted.")
                 

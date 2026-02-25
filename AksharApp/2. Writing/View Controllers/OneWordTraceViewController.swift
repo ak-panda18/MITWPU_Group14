@@ -13,31 +13,26 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     
     // MARK: - Properties
     var selectedCategory: TracingCategory = .threeLetter
-    
-    // Map Base Class 'currentIndex' to 'currentWordIndex'
     var currentWordIndex: Int {
         get { return currentIndex }
         set { currentIndex = newValue }
     }
     
-    // Override Base Class 'categoryKey' to use the Word Category string (e.g., "3-letter", "power")
-    // This ensures mistakes/progress are saved to the correct category.
     override var categoryKey: String {
         return selectedCategory.rawValue
     }
     
-    // Override Base Class 'brushWidth' to be dynamic based on word length
     override var brushWidth: CGFloat {
         get {
             switch selectedCategory {
-            case .threeLetter: return 40.0
-            case .fourLetter: return 45.0
-            case .fiveLetter: return 30.0
-            case .sixLetter: return 25.0
-            default: return 40.0
+            case .threeLetter: return 32.0
+            case .fourLetter: return 27.0
+            case .fiveLetter: return 22.0
+            case .sixLetter: return 13.0
+            case .power: return 13.0
             }
         }
-        set { super.brushWidth = newValue } // Setter placeholder
+        set { super.brushWidth = newValue }
     }
     
     private var words: [TracingWord] = []
@@ -51,7 +46,7 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     @IBOutlet weak var speakerButton: UIView!
     @IBOutlet weak var wordImageView: UIImageView!
     @IBOutlet weak var committedDrawingImageView: UIImageView!
-    @IBOutlet weak var illustrationImageView: UIImageView! // Specific to Words
+    @IBOutlet weak var illustrationImageView: UIImageView!
     @IBOutlet weak var retryButton: UIButton!
     @IBOutlet weak var tickButton: UIButton!
     @IBOutlet weak var nextChevronButton: UIButton!
@@ -61,28 +56,24 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // 1. Initialize Base Class logic for 1 Pane
+        WritingGameplayManager.shared.lastActiveCategory = selectedCategory.rawValue
+        
         initPaneArrays(count: 1)
         
-        // 2. Register UI components
         paneLetterImageViews = [wordImageView]
         
-        // 3. Setup Tracing Layers
         setupShapeLayer(for: wordImageView)
         let canvas = setupCanvas(in: committedDrawingImageView)
         paneCommittedCanvases = [canvas]
         
-        // 4. Standard UI & Data Setup
         setupUI()
         loadWordsData()
         
-        // 5. Layout (Defer specific layout updates until needed)
         if !didSetupAfterLayout {
             applyPowerWordLayoutIfNeeded()
             didSetupAfterLayout = true
         }
         
-        // 6. Load Content
         showWord(at: currentWordIndex)
     }
     
@@ -94,7 +85,6 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Ensure shapes align if layout changes (e.g. rotation)
         if paneShapeLayers.indices.contains(0) {
             paneShapeLayers[0].frame = wordImageView.bounds
         }
@@ -117,28 +107,24 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
             layout.scrollDirection = .horizontal
         }
         
-        let brown = UIColor(red: 135/255.0, green: 87/255.0, blue: 55/255.0, alpha: 1.0)
-        let yellow = UIColor(red: 248/255.0, green: 236/255.0, blue: 180/255.0, alpha: 1.0)
-        
-        func style(_ view: UIView, border: CGColor) {
-            view.layer.borderColor = border
-            view.layer.borderWidth = 3
-        }
-        
-        style(speakerButton, border: brown.cgColor)
-        style(retryButton, border: brown.cgColor)
-        style(tickButton, border: brown.cgColor)
-        
+        applyBorderStyle(to: speakerButton, borderColor: themeBrown)
+        applyBorderStyle(to: retryButton, borderColor: themeBrown)
+        applyBorderStyle(to: tickButton, borderColor: themeBrown)
+
+        applyBorderStyle(
+            to: wordsCollectionView,
+            borderColor: themeYellow,
+            borderWidth: 2,
+            cornerRadius: 20
+        )
+
         yellowView.layer.cornerRadius = 25
-        wordsCollectionView.layer.borderColor = yellow.cgColor
-        wordsCollectionView.layer.borderWidth = 2
-        wordsCollectionView.layer.cornerRadius = 20
+
         
         illustrationImageView.layer.cornerRadius = 15
         illustrationImageView.clipsToBounds = true
         illustrationImageView.contentMode = .scaleAspectFit
         
-        // Base handles touch, disable local interaction
         wordImageView.isUserInteractionEnabled = false
         wordImageView.contentMode = .scaleAspectFit
         committedDrawingImageView.isUserInteractionEnabled = false
@@ -147,7 +133,6 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         nextChevronButton.isEnabled = false
         nextChevronButton.alpha = 0.4
         
-        // Speaker Tap
         let tap = UITapGestureRecognizer(target: self, action: #selector(speakerTapped))
         speakerButton.addGestureRecognizer(tap)
         speakerButton.isUserInteractionEnabled = true
@@ -156,13 +141,15 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     private func applyPowerWordLayoutIfNeeded() {
         guard selectedCategory == .power else { return }
         illustrationImageView.isHidden = true
-        wordImageView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Remove old constraints on illustration/word stack if possible,
-        // but here we just re-constrain wordImageView to center.
+        wordImageView.translatesAutoresizingMaskIntoConstraints = false
+        committedDrawingImageView.translatesAutoresizingMaskIntoConstraints = false
+        
         let constraintsToDeactivate = yellowView.constraints.filter {
             $0.firstItem as? UIView == wordImageView ||
-            $0.secondItem as? UIView == wordImageView
+            $0.secondItem as? UIView == wordImageView ||
+            $0.firstItem as? UIView == committedDrawingImageView ||
+            $0.secondItem as? UIView == committedDrawingImageView
         }
         NSLayoutConstraint.deactivate(constraintsToDeactivate)
         
@@ -171,68 +158,82 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         let maxWidth = wordImageView.widthAnchor.constraint(lessThanOrEqualTo: yellowView.widthAnchor, multiplier: 0.85)
         let maxHeight = wordImageView.heightAnchor.constraint(lessThanOrEqualTo: yellowView.heightAnchor, multiplier: 0.6)
         
-        powerWordCenterConstraints = [centerX, centerY, maxWidth, maxHeight]
+        let matchTop = committedDrawingImageView.topAnchor.constraint(equalTo: wordImageView.topAnchor)
+        let matchBottom = committedDrawingImageView.bottomAnchor.constraint(equalTo: wordImageView.bottomAnchor)
+        let matchLeading = committedDrawingImageView.leadingAnchor.constraint(equalTo: wordImageView.leadingAnchor)
+        let matchTrailing = committedDrawingImageView.trailingAnchor.constraint(equalTo: wordImageView.trailingAnchor)
+        
+        powerWordCenterConstraints = [
+            centerX, centerY, maxWidth, maxHeight,
+            matchTop, matchBottom, matchLeading, matchTrailing
+        ]
         NSLayoutConstraint.activate(powerWordCenterConstraints)
+        view.layoutIfNeeded()
+        if paneCommittedCanvases.indices.contains(0) {
+            paneCommittedCanvases[0].frame = committedDrawingImageView.bounds
+        }
     }
 
     // MARK: - Content Loading
     private func showWord(at index: Int) {
         guard index < words.count else { return }
         currentWordIndex = index
-        let category = categoryKey // Uses our override
-        
-        // MVC: Load Mistakes
-        mistakeCount = WritingGameplayManager.shared.getMistakeCount(index: index, category: category)
+        let category = categoryKey
         
         let wordData = words[index]
-        
-        // 1. Load Images
-        if let image = UIImage(named: wordData.wordImageName) {
-            wordImageView.image = image
-        }
-        
-        if let illustrationName = wordData.imageName {
-            illustrationImageView.image = UIImage(named: illustrationName)
-        } else {
-            illustrationImageView.image = nil
-        }
-        
-        // 2. Load Mask
-        // Base Class helper 'loadMasks' expects an array
-        paneMaskAssetNames = ["\(wordData.wordImageName)_mask"]
+        let content =
+            WordTraceContentProvider.content(
+                word: wordData
+            )
+
+        wordImageView.image = content.0
+        illustrationImageView.image = content.1
+
+        paneMaskAssetNames = content.2
         loadMasks(forPane: 0, assetNames: paneMaskAssetNames)
-        
-        // 3. MVC: Load Saved Drawing
-        if let savedDrawing = WritingGameplayManager.shared.loadOneDrawing(index: index, category: category) {
-            paneCommittedCanvases[0].drawing = savedDrawing
-            let hasContent = !savedDrawing.strokes.isEmpty
-            
-            // Logic: Is this word historically done?
-            let maxUnlocked = WritingGameplayManager.shared.getHighestUnlockedIndex(category: category)
-            let isHistoricallyDone = (index < maxUnlocked)
-            
-            if (isHistoricallyDone && hasContent) || hasContent {
-                paneIsCompleted[0] = true
-                paneCurrentMaskIndex[0] = 999 // Force Complete
-                isTracingLocked = true
-                tickButton.backgroundColor = .systemGreen
-            } else {
-                paneIsCompleted[0] = false
-                paneCurrentMaskIndex[0] = 0
-                isTracingLocked = false
-                tickButton.backgroundColor = .white
-            }
-        } else {
-            paneCommittedCanvases[0].drawing = PKDrawing()
-            paneIsCompleted[0] = false
-            paneCurrentMaskIndex[0] = 0
-            isTracingLocked = false
-            tickButton.backgroundColor = .white
-        }
+        restoreWordDrawing(
+            index: index,
+            category: category
+        )
+
+        tickButton.backgroundColor =
+        paneIsCompleted[0] ? .systemGreen : .white
         
         resetTransientLayer(paneIndex: 0)
         updateChevronStates()
         wordsCollectionView.reloadData()
+    }
+    
+    private func restoreWordDrawing(
+        index: Int,
+        category: String
+    ) {
+
+        if let saved =
+            WritingGameplayManager.shared
+            .loadOneDrawing(
+                index: index,
+                category: category
+            ) {
+
+            paneCommittedCanvases[0].drawing = saved
+
+            let hasContent = !saved.strokes.isEmpty
+
+            paneIsCompleted[0] = hasContent
+            paneCurrentMaskIndex[0] =
+                hasContent ? 999 : 0
+
+            isTracingLocked = hasContent
+
+        } else {
+            paneCommittedCanvases[0].drawing =
+                PKDrawing()
+
+            paneIsCompleted[0] = false
+            paneCurrentMaskIndex[0] = 0
+            isTracingLocked = false
+        }
     }
     
     private func onAllStrokesCompleted() {
@@ -241,53 +242,38 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         resetTransientLayer(paneIndex: 0)
         tickButton.backgroundColor = .systemGreen
         
-        // MVC: Save Drawing (Auto-unlocks next word inside Manager if logic existed there,
-        // but for Words, usually only 'SixWord' stage unlocks next.
-        // However, we save the drawing state here.)
         WritingGameplayManager.shared.saveOneDrawing(
             paneCommittedCanvases[0].drawing,
             index: currentWordIndex,
             category: categoryKey
         )
-        
-        // Analytics
-        let penalty = mistakeCount * 10
-        let performanceScore = max(0, 100 - penalty)
-        
-        let session = WritingSessionData(
-            id: UUID(),
-            date: Date(),
-            childId: "default_child",
-            lettersAccuracy: 0,
-            wordsAccuracy: performanceScore,
-            numbersAccuracy: 0
+        WritingGameplayManager.shared.finalizeSession(
+            index: currentIndex,
+            category: categoryKey,
+            mistakes: WritingGameplayManager.shared.sessionMistakes,
+            contentType: .words,
+            tracingCategory: selectedCategory
         )
-        AnalyticsStore.shared.appendWritingSession(session)
         
-        // Reset Mistakes
         WritingGameplayManager.shared.saveMistakeCount(0, index: currentWordIndex, category: categoryKey)
         
         updateChevronStates()
-        
-        if performanceScore >= 80 {
-            showStickerFromBottom(assetName: "sticker")
-        }
     }
 
     // MARK: - Actions
     @IBAction func traceCompleteTapped(_ sender: Any) {
         if isTracingLocked && !paneIsCompleted[0] { return }
-
-        // Base Class Logic
         let didAdvance = checkAndCommitGreenInk(paneIndex: 0)
 
         if paneIsCompleted[0] {
             onAllStrokesCompleted()
+            if WritingGameplayManager.shared.didEarnSticker() {
+                showStickerFromBottom(assetName: "sticker")
+            }
         } else if !didAdvance {
             flashIncompleteWarning()
         }
         
-        // Intermediate Save if progressed
         if didAdvance && !paneIsCompleted[0] {
             WritingGameplayManager.shared.saveOneDrawing(
                 paneCommittedCanvases[0].drawing,
@@ -298,16 +284,9 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     }
     
     @IBAction func retryButtonTapped(_ sender: UIButton) {
-        // Clear UI only, keep file on disk
         isTracingLocked = false
-        paneIsCompleted[0] = false
-        paneCurrentMaskIndex[0] = 0
         tickButton.backgroundColor = .white
-
-        resetTransientLayer(paneIndex: 0)
-        paneCommittedCanvases[0].drawing = PKDrawing()
-        
-        // No need to update chevrons because the file remains on disk
+        resetPaneCompletely(0)
     }
     
     @IBAction func speakerTapped(_ sender: UIButton) {
@@ -341,7 +320,6 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     }
     
     @IBAction func backButtonTapped(_ sender: Any) {
-        // Find WordsCategoriesViewController in stack
         if let nav = navigationController {
             for controller in nav.viewControllers {
                 if String(describing: type(of: controller)).contains("WordsCategories") {
@@ -357,7 +335,6 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     private func updateChevronStates() {
         let unlocked = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
         
-        // 1. History Check
         if currentWordIndex < unlocked {
             nextChevronButton.isEnabled = true
             nextChevronButton.alpha = 1.0
@@ -366,7 +343,6 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
             return
         }
         
-        // 2. Current Check
         let hasSavedDrawing = (WritingGameplayManager.shared.loadOneDrawing(index: currentWordIndex, category: categoryKey) != nil)
         
         nextChevronButton.isEnabled = hasSavedDrawing
@@ -398,11 +374,23 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "wordButtonCell", for: indexPath)
         
         if let button = cell.viewWithTag(100) as? UIButton {
+            button.configuration = nil
+            button.setTitleColor(.white, for: .normal)
+            button.titleLabel?.font = UIFont.systemFont(ofSize: 30, weight: .medium)
+            button.titleLabel?.textAlignment = .center
             let word = words[indexPath.item].word
             button.setTitle(word, for: .normal)
-            
-            let unlockedIdx = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
-            let isUnlocked = indexPath.item <= unlockedIdx
+            let unlockedIdx =
+            WritingGameplayManager.shared
+            .getHighestUnlockedIndex(category: categoryKey)
+
+            let isUnlocked =
+            WritingGameplayManager.shared
+            .isIndexUnlocked(
+                index: indexPath.item,
+                category: categoryKey
+            )
+
             let isCompleted = indexPath.item < unlockedIdx
             
             if isCompleted {
@@ -423,18 +411,21 @@ class OneWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
                 button.layer.borderWidth = 0
             }
             
-            // Disable interaction so cell handles selection
+            button.layoutIfNeeded()
+            button.layer.cornerRadius = button.bounds.height / 2
+            button.clipsToBounds = true
             button.isUserInteractionEnabled = false
         }
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let unlockedIdx = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
-        
-        if indexPath.item <= unlockedIdx {
-            showWord(at: indexPath.item)
-        }
+        guard WritingGameplayManager.shared.isIndexUnlocked(
+            index: indexPath.item,
+            category: categoryKey
+        ) else { return }
+
+        showWord(at: indexPath.item)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

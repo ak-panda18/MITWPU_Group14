@@ -16,7 +16,6 @@ final class QuizMyStory_ViewController: UIViewController,
     var startingIndex: Int?
     var coverWasShown: Bool = false
     
-    // We get the index from the Manager
     var currentIndex: Int {
         return PhonicsGameplayManager.shared.getCurrentIndex()
     }
@@ -40,13 +39,14 @@ final class QuizMyStory_ViewController: UIViewController,
     @IBOutlet weak var homeButton: UIButton!
     @IBOutlet var optionButtons: [UIButton]!
     @IBOutlet weak var promptLabel: UILabel!
-
+    @IBOutlet var questionView: UIView!
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         configureGameData()
-        configureUI()
         loadCurrentQuestion()
+        configureUI()
     }
 
     override func viewDidLayoutSubviews() {
@@ -54,15 +54,16 @@ final class QuizMyStory_ViewController: UIViewController,
         submitButton.layer.cornerRadius = submitButton.bounds.height / 2
         speakerButton.layer.cornerRadius = speakerButton.bounds.height / 2
         optionButtons.forEach { $0.layer.cornerRadius = $0.bounds.height / 2 }
+        let cardRadius: CGFloat = 25
+        yellowCardView.layer.cornerRadius = cardRadius
+        questionView.layer.cornerRadius = cardRadius
     }
 
     // MARK: - Initial Setup
     private func configureGameData() {
-        // 1. Load Data
-        questions = QuizQuestionLoader.loadQuestions()
+        self.questions = BundleDataLoader.shared.load("QuizMyStoryQuestions", as: [QuizQuestion].self)
 
         if questions.isEmpty {
-            // Fallback if load fails
             questions = [
                 QuizQuestion(
                     sentence: "Fallback story.",
@@ -73,7 +74,6 @@ final class QuizMyStory_ViewController: UIViewController,
             ]
         }
 
-        // 2. Start Manager Session
         PhonicsGameplayManager.shared.startSession(
             for: .quizMyStory,
             totalQuestions: questions.count,
@@ -95,10 +95,11 @@ final class QuizMyStory_ViewController: UIViewController,
         yellowCardView.layer.borderWidth = 4
         yellowCardView.layer.borderColor = UIColor(red: 0.96, green: 0.92, blue: 0.66, alpha: 1).cgColor
         yellowCardView.clipsToBounds = true
-
-        promptLabel.layer.borderWidth = 4
-        promptLabel.layer.borderColor = UIColor(red: 0.96, green: 0.92, blue: 0.66, alpha: 1).cgColor
-        promptLabel.clipsToBounds = true
+        
+        questionView.backgroundColor = UIColor(red: 1, green: 0.97, blue: 0.85, alpha: 1)
+        questionView.layer.borderWidth = 4
+        questionView.layer.borderColor = UIColor(red: 0.96, green: 0.92, blue: 0.66, alpha: 1).cgColor
+        questionView.clipsToBounds = true
 
         speakerButton.layer.borderWidth = 2
         speakerButton.layer.borderColor = UIColor(red: 0.88, green: 0.76, blue: 0.37, alpha: 1).cgColor
@@ -138,7 +139,6 @@ final class QuizMyStory_ViewController: UIViewController,
         isAnswerLocked = false
         submitButton.setTitle("Submit", for: .normal)
 
-        // Shuffle options and keep track of original index to verify answer later
         shuffledOptions = question.options.enumerated().map {
             (text: $0.element, originalIndex: $0.offset)
         }.shuffled()
@@ -158,6 +158,7 @@ final class QuizMyStory_ViewController: UIViewController,
     }
 
     private func moveToNextQuestion() {
+        removeSticker()
         PhonicsGameplayManager.shared.advanceToNext()
         loadCurrentQuestion()
     }
@@ -200,17 +201,14 @@ final class QuizMyStory_ViewController: UIViewController,
             return
         }
         
-        // 1. Record Attempt
         PhonicsGameplayManager.shared.recordAttempt()
         
         let index = PhonicsGameplayManager.shared.getCurrentIndex()
         let correctIndex = questions[index].correctIndex
         
-        // Find which button corresponds to the correct original index
         let correctButtonIndex = shuffledOptions.firstIndex { $0.originalIndex == correctIndex }!
 
         if selected == correctButtonIndex {
-            // 2. Record Success
             PhonicsGameplayManager.shared.recordSuccess()
             
             feedbackLabel.text = "Correct!"
@@ -218,7 +216,7 @@ final class QuizMyStory_ViewController: UIViewController,
             isAnswerLocked = true
             submitButton.setTitle("Next", for: .normal)
             optionButtons.forEach { $0.isUserInteractionEnabled = false }
-            triggerConfetti()
+            showStickerAtTopRight(assetName: "YouDidIt", horizontalOffset: 5)
         } else {
             feedbackLabel.text = "Try again!"
             feedbackLabel.textColor = .systemRed

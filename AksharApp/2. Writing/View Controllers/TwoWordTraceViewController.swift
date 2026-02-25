@@ -13,27 +13,23 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     
     // MARK: - Properties
     var selectedCategory: TracingCategory = .threeLetter
-    
-    // Map Base Class 'currentIndex' to 'currentWordIndex'
     var currentWordIndex: Int {
         get { return currentIndex }
         set { currentIndex = newValue }
     }
     
-    // Override Base Class 'categoryKey' to use the Word Category string
     override var categoryKey: String {
         return selectedCategory.rawValue
     }
     
-    // Override Base Class 'brushWidth' to be dynamic based on word length
     override var brushWidth: CGFloat {
         get {
             switch selectedCategory {
-            case .threeLetter: return 35.0
-            case .fourLetter: return 30.0
-            case .fiveLetter: return 25.0
-            case .sixLetter: return 20.0
-            default: return 30.0
+            case .threeLetter: return 32.0
+            case .fourLetter: return 27.0
+            case .fiveLetter: return 22.0
+            case .sixLetter: return 17.0
+            case .power: return 17.0
             }
         }
         set { super.brushWidth = newValue }
@@ -52,11 +48,11 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     // MARK: - Pane Views
     @IBOutlet weak var topLetterImageView: UIImageView!
     @IBOutlet weak var topCommittedDrawingImageView: UIImageView!
-    @IBOutlet weak var topTransientDrawingImageView: UIImageView! // Unused
+    @IBOutlet weak var topTransientDrawingImageView: UIImageView!
 
     @IBOutlet weak var bottomLetterImageView: UIImageView!
     @IBOutlet weak var bottomCommittedDrawingImageView: UIImageView!
-    @IBOutlet weak var bottomTransientDrawingImageView: UIImageView! // Unused
+    @IBOutlet weak var bottomTransientDrawingImageView: UIImageView!
     
     @IBOutlet weak var nextChevronButton: UIButton!
     @IBOutlet weak var traceCompleteButton: UIButton!
@@ -67,15 +63,10 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         super.viewDidLoad()
         
         analyticsSessionID = UUID()
-        
-        // 1. Initialize Base Class logic for 2 Panes
         initPaneArrays(count: 2)
         
-        // 2. Register UI components with Base Class
-        // Index 0 = Top, Index 1 = Bottom
         paneLetterImageViews = [topLetterImageView, bottomLetterImageView]
         
-        // 3. Setup Tracing Layers
         setupShapeLayer(for: topLetterImageView)
         setupShapeLayer(for: bottomLetterImageView)
         
@@ -83,12 +74,10 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         let bottomCanvas = setupCanvas(in: bottomCommittedDrawingImageView)
         paneCommittedCanvases = [topCanvas, bottomCanvas]
         
-        // 4. Standard UI Setup
         setupUIAppearance()
         setupCollectionView()
         loadWordsData()
         
-        // 5. Load Content
         loadWord(at: currentWordIndex)
     }
     
@@ -105,7 +94,6 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Ensure shapes align if layout changes
         if paneShapeLayers.indices.contains(1) {
             paneShapeLayers[0].frame = topLetterImageView.bounds
             paneShapeLayers[1].frame = bottomLetterImageView.bounds
@@ -131,33 +119,30 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     }
     
     private func setupUIAppearance() {
-        let brownColor = UIColor(red: 135/255.0, green: 87/255.0, blue: 55/255.0, alpha: 1.0).cgColor
-        let yellowColor = UIColor(red: 248/255.0, green: 236/255.0, blue: 180/255.0, alpha: 1.0).cgColor
-        
-        func style(_ view: UIView, border: CGColor) {
-            view.layer.borderColor = border
-            view.layer.borderWidth = 3
-        }
-        
-        style(speakerButton, border: brownColor)
-        style(retryButton, border: brownColor)
-        style(traceCompleteButton, border: brownColor)
-        
+
+        applyBorderStyle(to: speakerButton, borderColor: themeBrown)
+        applyBorderStyle(to: retryButton, borderColor: themeBrown)
+        applyBorderStyle(to: traceCompleteButton, borderColor: themeBrown)
+
+        applyBorderStyle(
+            to: wordsCollectionView,
+            borderColor: themeYellow,
+            borderWidth: 2,
+            cornerRadius: 20
+        )
+
         yellowView.layer.cornerRadius = 25
-        wordsCollectionView.layer.borderColor = yellowColor
-        wordsCollectionView.layer.borderWidth = 2
-        wordsCollectionView.layer.cornerRadius = 20
         retryButton.isHidden = false
-        
+
         nextChevronButton.isEnabled = false
         nextChevronButton.alpha = 0.4
-        
-        // Base handles interaction
+
         topLetterImageView.isUserInteractionEnabled = false
         bottomLetterImageView.isUserInteractionEnabled = false
         topCommittedDrawingImageView.isUserInteractionEnabled = false
         bottomCommittedDrawingImageView.isUserInteractionEnabled = false
     }
+
 
     // MARK: - Word Loading
     private func loadWord(at index: Int) {
@@ -165,111 +150,87 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         currentWordIndex = index
         let category = categoryKey
         
-        // MVC: Load Mistakes
-        mistakeCount = WritingGameplayManager.shared.getMistakeCount(index: index, category: category)
-        
-        // 1. Load Images
         let word = words[index]
         if let image = UIImage(named: word.wordImageName) {
             topLetterImageView.image = image
             bottomLetterImageView.image = image
         }
         
-        // 2. Load Masks (Both panes use the same word mask)
         let maskName = "\(word.wordImageName)_mask"
-        paneMaskAssetNames = [maskName] // Store for reference
+        paneMaskAssetNames = [maskName]
         
         loadMasks(forPane: 0, assetNames: [maskName])
         loadMasks(forPane: 1, assetNames: [maskName])
         
-        // 3. MVC: Load Drawings (Tuple)
-        if let (top, bottom) = WritingGameplayManager.shared.loadTwoDrawings(index: index, category: category) {
-            paneCommittedCanvases[0].drawing = top
-            paneCommittedCanvases[1].drawing = bottom
-
-            // Check Top Status
-            if !top.strokes.isEmpty {
-                paneIsCompleted[0] = true
-                paneCurrentMaskIndex[0] = 999
-            } else {
-                paneIsCompleted[0] = false
-                paneCurrentMaskIndex[0] = 0
-            }
-
-            // Check Bottom Status
-            if !bottom.strokes.isEmpty {
-                paneIsCompleted[1] = true
-                paneCurrentMaskIndex[1] = 999
-            } else {
-                paneIsCompleted[1] = false
-                paneCurrentMaskIndex[1] = 0
-            }
-            
-            // Check History (Unlock state)
-            let unlockedIdx = WritingGameplayManager.shared.getHighestUnlockedIndex(category: category)
-            let isHistoricallyDone = index < unlockedIdx
-            
-            if isHistoricallyDone {
-                // If historically done, ensure visually locked even if empty (rare case)
-                if !paneIsCompleted[0] { paneIsCompleted[0] = true; paneCurrentMaskIndex[0] = 999 }
-                if !paneIsCompleted[1] { paneIsCompleted[1] = true; paneCurrentMaskIndex[1] = 999 }
-            }
-            
-            isTracingLocked = false // Allow filling in gaps
-        } else {
-            paneCommittedCanvases[0].drawing = PKDrawing()
-            paneCommittedCanvases[1].drawing = PKDrawing()
-            paneIsCompleted = [false, false]
-            paneCurrentMaskIndex = [0, 0]
-            isTracingLocked = false
-        }
-        
-        // Reset Transient UI
+        restoreTwoWordDrawings(
+            index: index,
+            category: category
+        )
         resetTransientLayer(paneIndex: 0)
         resetTransientLayer(paneIndex: 1)
         
         wordsCollectionView.reloadData()
         updateNextChevronState()
         
-        // Update Button Color
         let allDone = paneIsCompleted[0] && paneIsCompleted[1]
         traceCompleteButton.backgroundColor = allDone ? .systemGreen : .white
     }
     
+    private func restoreTwoWordDrawings(
+        index: Int,
+        category: String
+    ) {
+
+        if let (top, bottom) =
+            WritingGameplayManager.shared
+            .loadTwoDrawings(index: index, category: category) {
+
+            paneCommittedCanvases[0].drawing = top
+            paneCommittedCanvases[1].drawing = bottom
+
+            paneIsCompleted[0] = !top.strokes.isEmpty
+            paneIsCompleted[1] = !bottom.strokes.isEmpty
+
+            paneCurrentMaskIndex[0] = paneIsCompleted[0] ? 999 : 0
+            paneCurrentMaskIndex[1] = paneIsCompleted[1] ? 999 : 0
+
+            isTracingLocked = false
+
+        } else {
+
+            paneCommittedCanvases[0].drawing = PKDrawing()
+            paneCommittedCanvases[1].drawing = PKDrawing()
+
+            paneIsCompleted = [false, false]
+            paneCurrentMaskIndex = [0, 0]
+            isTracingLocked = false
+        }
+    }
+
     private func onAllStrokesCompleted() {
-        // MVC: Save Both
         WritingGameplayManager.shared.saveTwoDrawings(
             top: paneCommittedCanvases[0].drawing,
             bottom: paneCommittedCanvases[1].drawing,
             index: currentWordIndex,
             category: categoryKey
         )
+        WritingGameplayManager.shared.finalizeSession(
+            index: currentIndex,
+            category: categoryKey,
+            mistakes: WritingGameplayManager.shared.sessionMistakes,
+            contentType: .words,
+            tracingCategory: selectedCategory
+        )
         
         nextChevronButton.isEnabled = true
         nextChevronButton.alpha = 1.0
         traceCompleteButton.backgroundColor = .systemGreen
         
-        // Analytics
-        let penalty = mistakeCount * 10
-        let performanceScore = max(0, 100 - penalty)
-        
-        let session = WritingSessionData(
-            id: analyticsSessionID ?? UUID(),
-            date: Date(),
-            childId: "default_child",
-            lettersAccuracy: 0,
-            wordsAccuracy: performanceScore,
-            numbersAccuracy: 0
-        )
-        AnalyticsStore.shared.appendWritingSession(session)
-        
-        // Reset Mistakes
         WritingGameplayManager.shared.saveMistakeCount(0, index: currentWordIndex, category: categoryKey)
     }
 
     // MARK: - Actions
     @IBAction func traceCompleteTapped(_ sender: Any) {
-        // Check Red Error State
         if paneShapeLayers[0].strokeColor == UIColor.red.cgColor ||
            paneShapeLayers[1].strokeColor == UIColor.red.cgColor {
             return
@@ -278,39 +239,29 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         var didAdvanceTop = false
         var didAdvanceBottom = false
         
-        // Process Top
         if !paneIsCompleted[0] {
             didAdvanceTop = checkAndCommitGreenInk(paneIndex: 0)
         }
         
-        // Process Bottom
         if !paneIsCompleted[1] {
             didAdvanceBottom = checkAndCommitGreenInk(paneIndex: 1)
         }
         
         let topDone = paneIsCompleted[0]
         let bottomDone = paneIsCompleted[1]
-        
-        // Logic: Flash warning if neither advanced AND neither is done
         if !didAdvanceTop && !didAdvanceBottom {
             if !(topDone && bottomDone) {
                 flashIncompleteWarning()
             }
         }
         
-        // Save Progress if anything changed
         if didAdvanceTop || didAdvanceBottom {
             savePartialProgressIfNeeded()
         }
         
-        // Check Full Completion
         if topDone && bottomDone {
             onAllStrokesCompleted()
-            
-            let penalty = mistakeCount * 10
-            let accuracy = max(0, 100 - penalty)
-
-            if accuracy >= 80 {
+            if WritingGameplayManager.shared.didEarnSticker() {
                 showStickerFromBottom(assetName: "sticker")
             }
         }
@@ -319,8 +270,6 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     @IBAction func retryTapped(_ sender: UIButton) {
         let topCompleted = paneIsCompleted[0]
         let bottomCompleted = paneIsCompleted[1]
-        
-        // Smart Retry: Reset only the incomplete pane
         switch (topCompleted, bottomCompleted) {
         case (true, false):
             resetPane(1)
@@ -335,10 +284,7 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     }
     
     private func resetPane(_ index: Int) {
-        resetTransientLayer(paneIndex: index)
-        paneCommittedCanvases[index].drawing = PKDrawing()
-        paneIsCompleted[index] = false
-        paneCurrentMaskIndex[index] = 0
+        resetPaneCompletely(index)
     }
 
     @IBAction func backButtonTapped(_ sender: Any) {
@@ -384,14 +330,12 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     private func updateNextChevronState() {
         let unlocked = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
         
-        // 1. History Check
         if currentWordIndex < unlocked {
             nextChevronButton.isEnabled = true
             nextChevronButton.alpha = 1.0
             return
         }
         
-        // 2. Current Check
         if let (top, bottom) = WritingGameplayManager.shared.loadTwoDrawings(index: currentWordIndex, category: categoryKey) {
              let isComplete = !top.strokes.isEmpty && !bottom.strokes.isEmpty
              nextChevronButton.isEnabled = isComplete
@@ -403,7 +347,6 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
     }
     
     private func savePartialProgressIfNeeded() {
-        // Only save if there is actual content
         let topHas = !paneCommittedCanvases[0].drawing.strokes.isEmpty
         let bottomHas = !paneCommittedCanvases[1].drawing.strokes.isEmpty
         
@@ -459,7 +402,7 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
             
             button.layer.cornerRadius = 30
             button.clipsToBounds = true
-            button.isUserInteractionEnabled = false // Let cell handle touch
+            button.isUserInteractionEnabled = false 
             
             if indexPath.item == currentWordIndex {
                 button.layer.borderWidth = 3; button.layer.borderColor = UIColor.white.cgColor
@@ -474,7 +417,6 @@ class TwoWordTraceViewController: BaseTraceViewController, UICollectionViewDataS
         let unlockedIdx = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
         
         if indexPath.item <= unlockedIdx {
-            // Navigate to OneWordTraceVC (Standard behavior for picking a specific word)
             let vc = storyboard!.instantiateViewController(withIdentifier: "OneWordTraceVC") as! OneWordTraceViewController
             vc.currentWordIndex = indexPath.item
             vc.selectedCategory = selectedCategory

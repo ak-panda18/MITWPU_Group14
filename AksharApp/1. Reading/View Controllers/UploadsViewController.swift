@@ -6,12 +6,12 @@ class UploadsViewController: UIViewController {
 
     @IBOutlet weak var collectionView: UICollectionView!
     
-    // UI State
     private var isSearching: Bool = false
     private var filteredDocs: [StoredDoc] = []
     private var searchBar: UISearchBar?
     
-    // Data Source
+    private lazy var fallbackPlusImage: UIImage? = placeholderPlusImage()
+    
     private var currentDocs: [StoredDoc] {
         if isSearching {
             return filteredDocs
@@ -26,11 +26,9 @@ class UploadsViewController: UIViewController {
         collectionView.dataSource = self
         collectionView.delegate = self
         
-        // Restore Original Layout
         configureCollectionLayout()
         setupSearch()
         
-        // Fix for "Unable to click" - Allows tapping cells while ignoring search dismiss
         let tap = UITapGestureRecognizer(target: self, action: #selector(hideSearchIfNeeded))
         tap.cancelsTouchesInView = false
         tap.delegate = self
@@ -51,7 +49,6 @@ class UploadsViewController: UIViewController {
     // MARK: - Layout Configuration (Restored)
     private func configureCollectionLayout() {
         guard let flow = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
-        // Exact values from your original file:
         flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         flow.minimumInteritemSpacing = 16
         flow.minimumLineSpacing = 8
@@ -104,14 +101,7 @@ class UploadsViewController: UIViewController {
     private func openDocument(at index: Int) {
         let doc = currentDocs[index]
         
-        guard let pagesFile = doc.pagesFileName else { return }
-        let fileManager = FileManager.default
-        let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let url = docsURL.appendingPathComponent(pagesFile)
-        
-        if let data = try? Data(contentsOf: url),
-           let pages = try? JSONDecoder().decode([String].self, from: data), !pages.isEmpty {
-            
+        if let pages = OCRManager.shared.getPages(for: doc), !pages.isEmpty {
             if let vc = storyboard?.instantiateViewController(withIdentifier: "LabelReadingVC") as? LabelReadingViewController {
                 vc.scannedPages = pages
                 vc.scannedTitle = doc.title
@@ -121,9 +111,10 @@ class UploadsViewController: UIViewController {
             }
         }
     }
+
 }
 
-// MARK: - Collection View DataSource (Restored Styling)
+// MARK: - Collection View DataSource
 extension UploadsViewController: UICollectionViewDataSource {
     func numberOfSections(in collectionView: UICollectionView) -> Int { 1 }
     
@@ -136,26 +127,21 @@ extension UploadsViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        // Exact styling from your original file
         cell.containerView.layer.borderWidth = 1
         cell.containerView.layer.borderColor = UIColor.systemGray4.cgColor
         cell.containerView.layer.cornerRadius = 16
         cell.containerView.clipsToBounds = true
         
         if indexPath.item == 0 {
-            // "New File" Cell
             cell.titleLabel.text = "New File"
             cell.dateLabel.text = ""
-            // Restore Font Size 22
             cell.titleLabel.font = UIFont.systemFont(ofSize: 22, weight: .semibold)
             cell.containerView.backgroundColor = .systemGray5
-            cell.imageView.image = UIImage(named: "plus_tile") ?? placeholderPlusImage()
+            cell.imageView.image = UIImage(named: "plus_tile") ?? fallbackPlusImage
         } else {
-            // Document Cell
             let doc = currentDocs[indexPath.item - 1]
             cell.titleLabel.text = doc.title
             cell.dateLabel.text = doc.dateText
-            // Restore Font Size 14
             cell.titleLabel.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
             cell.containerView.backgroundColor = .systemBackground
             
@@ -166,7 +152,6 @@ extension UploadsViewController: UICollectionViewDataSource {
             }
         }
         
-        // Restore Centered Text
         cell.titleLabel.textAlignment = .center
         cell.dateLabel.textAlignment = .center
         
@@ -174,7 +159,7 @@ extension UploadsViewController: UICollectionViewDataSource {
     }
 }
 
-// MARK: - Collection View Delegate & Layout (Restored Math)
+// MARK: - Collection View Delegate & Layout
 extension UploadsViewController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -186,7 +171,6 @@ extension UploadsViewController: UICollectionViewDelegate, UICollectionViewDeleg
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        // Exact math from your original file:
         let width: CGFloat = collectionView.bounds.width / 2 - 25
         let height: CGFloat = 210
         return CGSize(width: width, height: height)
@@ -214,7 +198,7 @@ extension UploadsViewController: UICollectionViewDelegate, UICollectionViewDeleg
     }
 }
 
-// MARK: - Gesture Delegate (Fix for Clicks)
+// MARK: - Gesture Delegate
 extension UploadsViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if let touchView = touch.view, touchView.isDescendant(of: collectionView) {
@@ -310,16 +294,29 @@ extension UploadsViewController: UISearchBarDelegate, VNDocumentCameraViewContro
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         let group = DispatchGroup()
-        var images: [UIImage] = []
-        for result in results {
+        
+        var images: [UIImage?] = Array(repeating: nil, count: results.count)
+        
+        for (index, result) in results.enumerated() {
             group.enter()
             if result.itemProvider.canLoadObject(ofClass: UIImage.self) {
                 result.itemProvider.loadObject(ofClass: UIImage.self) { image, _ in
-                    if let img = image as? UIImage { images.append(img) }
+                    if let img = image as? UIImage {
+                        DispatchQueue.main.async {
+                            images[index] = img
+                        }
+                    }
                     group.leave()
                 }
-            } else { group.leave() }
+            } else {
+                group.leave()
+            }
         }
-        group.notify(queue: .main) { self.handleNewImages(images) }
+        
+        group.notify(queue: .main) {
+            let validImages = images.compactMap { $0 }
+            self.handleNewImages(validImages)
+        }
     }
+
 }

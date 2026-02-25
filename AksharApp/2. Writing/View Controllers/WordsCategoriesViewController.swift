@@ -34,10 +34,6 @@ class WordsCategoriesViewController: UIViewController {
         backView.layer.cornerRadius = 25
         backView.layer.borderColor = UIColor.systemYellow.cgColor
         backView.layer.borderWidth = 3.0
-//
-//            textView.layer.cornerRadius = 25
-//            textView.layer.borderColor = UIColor.systemYellow.cgColor
-//            textView.layer.borderWidth = 1.0
         
         dialogueView.layer.cornerRadius = 12
         dialogueView.layer.shadowColor = UIColor.systemYellow.cgColor
@@ -76,30 +72,24 @@ class WordsCategoriesViewController: UIViewController {
 
     // MARK: - Navigation Logic
         private func openCategory(_ category: TracingCategory) {
-            // 1. Save Last Active Category (For Dashboard)
             WritingGameplayManager.shared.lastActiveCategory = category.rawValue
             
-            // 2. Get Progress
             let index = WritingGameplayManager.shared.getHighestUnlockedIndex(category: category.rawValue)
             let manager = WritingGameplayManager.shared
             let storyboard = UIStoryboard(name: "Main", bundle: nil)
             let vc: UIViewController
 
-            // 3. Determine which stage to resume based on what is already saved
             if manager.loadTwoDrawings(index: index, category: category.rawValue) != nil {
-                // Stage 2 (Two Word) is done -> Go to Stage 3 (Six Word)
                 let c = storyboard.instantiateViewController(withIdentifier: "SixWordTraceVC") as! SixWordTraceViewController
                 c.currentWordIndex = index
                 c.selectedCategory = category
                 vc = c
             } else if manager.loadOneDrawing(index: index, category: category.rawValue) != nil {
-                // Stage 1 (One Word) is done -> Go to Stage 2 (Two Word)
                 let c = storyboard.instantiateViewController(withIdentifier: "TwoWordTraceVC") as! TwoWordTraceViewController
                 c.currentWordIndex = index
                 c.selectedCategory = category
                 vc = c
             } else {
-                // Nothing done -> Start at Stage 1 (One Word)
                 let c = storyboard.instantiateViewController(withIdentifier: "OneWordTraceVC") as! OneWordTraceViewController
                 c.currentWordIndex = index
                 c.selectedCategory = category

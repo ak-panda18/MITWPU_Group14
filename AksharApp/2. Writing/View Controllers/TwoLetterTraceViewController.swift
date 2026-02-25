@@ -12,11 +12,13 @@ import AVFoundation
 class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     // MARK: - Properties
-    
-    // Helper to map 'currentLetterIndex' to Base Class 'currentIndex'
     var currentLetterIndex: Int {
         get { return currentIndex }
         set { currentIndex = newValue }
+    }
+    
+    private var isFullyCompleted: Bool {
+        return paneIsCompleted.allSatisfy { $0 }
     }
     
     // MARK: - Outlets
@@ -27,28 +29,28 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
     @IBOutlet weak var nextChevronButton: UIButton!
     @IBOutlet weak var traceCompleteButton: UIButton!
     @IBOutlet weak var retryButton: UIButton!
+    @IBOutlet weak var playButton: UIButton!
     
     // MARK: - Pane Views
     @IBOutlet weak var topLetterImageView: UIImageView!
     @IBOutlet weak var topCommittedDrawingImageView: UIImageView!
-    @IBOutlet weak var topTransientDrawingImageView: UIImageView! // Unused, but kept for connection
+    @IBOutlet weak var topTransientDrawingImageView: UIImageView!
 
     @IBOutlet weak var bottomLetterImageView: UIImageView!
     @IBOutlet weak var bottomCommittedDrawingImageView: UIImageView!
-    @IBOutlet weak var bottomTransientDrawingImageView: UIImageView! // Unused, but kept for connection
+    @IBOutlet weak var bottomTransientDrawingImageView: UIImageView!
+    override var traceStage: String { return "two" }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.brushWidth = 40
+        WritingGameplayManager.shared.startNewSession()
         
-        // 1. Initialize Base Class logic for 2 Panes
         initPaneArrays(count: 2)
         
-        // 2. Register UI components with Base Class
-        // Index 0 = Top, Index 1 = Bottom
         paneLetterImageViews = [topLetterImageView, bottomLetterImageView]
         
-        // 3. Setup Tracing Layers via Base Helpers
         setupShapeLayer(for: topLetterImageView)
         setupShapeLayer(for: bottomLetterImageView)
         
@@ -56,11 +58,11 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
         let bottomCanvas = setupCanvas(in: bottomCommittedDrawingImageView)
         paneCommittedCanvases = [topCanvas, bottomCanvas]
         
-        // 4. Standard UI Setup
+        speakerButton.isUserInteractionEnabled = true
+        
         setupUIAppearance()
         setupCollectionView()
         
-        // 5. Load Content
         showLetter(at: currentIndex)
     }
     
@@ -68,6 +70,16 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
         super.viewWillAppear(animated)
         updateNextChevronState()
         alphabetCollectionView.reloadData()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        startTraceAnimationForPane0(force: false)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        stopTraceAnimation()
     }
 
     // MARK: - UI Setup
@@ -80,18 +92,19 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
     }
     
     private func setupUIAppearance() {
-        let brownColor = UIColor(red: 135/255.0, green: 87/255.0, blue: 55/255.0, alpha: 1.0).cgColor
-        let yellowColor = UIColor(red: 248/255.0, green: 236/255.0, blue: 180/255.0, alpha: 1.0).cgColor
         
-        func style(_ view: UIView, border: CGColor, width: CGFloat = 3) {
-            view.layer.borderColor = border
-            view.layer.borderWidth = width
-        }
-        
-        style(speakerButton, border: brownColor)
-        style(retryButton, border: brownColor)
-        style(traceCompleteButton, border: brownColor)
-        style(alphabetCollectionView, border: yellowColor)
+        applyBorderStyle(to: speakerButton, borderColor: themeBrown)
+        applyBorderStyle(to: retryButton, borderColor: themeBrown)
+        applyBorderStyle(to: playButton, borderColor: themeBrown)
+        applyBorderStyle(to: traceCompleteButton, borderColor: themeBrown)
+
+        applyBorderStyle(
+            to: alphabetCollectionView,
+            borderColor: themeYellow,
+            borderWidth: 2,
+            cornerRadius: 20
+        )
+
         alphabetCollectionView.layer.borderWidth = 2
         alphabetCollectionView.layer.cornerRadius = 20
         
@@ -100,9 +113,7 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
         
         nextChevronButton.isEnabled = false
         nextChevronButton.alpha = 0.4
-        speakerButton.isUserInteractionEnabled = true
         
-        // Base class handles interaction
         topLetterImageView.isUserInteractionEnabled = false
         bottomLetterImageView.isUserInteractionEnabled = false
         topCommittedDrawingImageView.isUserInteractionEnabled = false
@@ -111,39 +122,28 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
 
     // MARK: - Content Loading
     private func showLetter(at index: Int) {
+
         currentIndex = index
         let category = categoryKey
-        
-        // MVC: Load Mistakes
-        mistakeCount = WritingGameplayManager.shared.getMistakeCount(index: currentIndex, category: category)
-        
-        // Load UI Images
-        var letterAssetName = ""
-        switch contentType {
-        case .letters:
-            letterAssetName = String(UnicodeScalar(65 + index)!)
-            let img = UIImage(named: "letter_\(letterAssetName)") ?? UIImage(named: letterAssetName)
-            topLetterImageView.image = img
-            bottomLetterImageView.image = img
-            paneMaskAssetNames = ["\(letterAssetName)_mask"]
-        case .numbers:
-            letterAssetName = "number_\(index)"
-            let img = UIImage(named: letterAssetName)
-            topLetterImageView.image = img
-            bottomLetterImageView.image = img
-            paneMaskAssetNames = ["\(index)_mask"]
-        }
-        
-        // Base Class: Load Masks for BOTH panes
+
+        let isFirstAttempt = WritingGameplayManager.shared.loadTwoDrawings(index: index, category: category) == nil
+        let (paneImages, maskNames) =
+            TraceContentProvider.paneImages(
+                index: index,   
+                contentType: contentType
+            )
+
+        topLetterImageView.image = paneImages[0]
+        bottomLetterImageView.image = paneImages[1]
+
+        paneMaskAssetNames = maskNames
         loadMasks(forPane: 0, assetNames: paneMaskAssetNames)
         loadMasks(forPane: 1, assetNames: paneMaskAssetNames)
         
-        // MVC: Load Drawings (Tuple)
         if let (top, bottom) = WritingGameplayManager.shared.loadTwoDrawings(index: currentIndex, category: category) {
             paneCommittedCanvases[0].drawing = top
             paneCommittedCanvases[1].drawing = bottom
 
-            // Check Top Status
             if !top.strokes.isEmpty {
                 paneIsCompleted[0] = true
                 paneCurrentMaskIndex[0] = 999
@@ -152,7 +152,6 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
                 paneCurrentMaskIndex[0] = 0
             }
 
-            // Check Bottom Status
             if !bottom.strokes.isEmpty {
                 paneIsCompleted[1] = true
                 paneCurrentMaskIndex[1] = 999
@@ -161,7 +160,7 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
                 paneCurrentMaskIndex[1] = 0
             }
             
-            isTracingLocked = false // Allow user to finish the other one
+            isTracingLocked = false
         } else {
             paneCommittedCanvases[0].drawing = PKDrawing()
             paneCommittedCanvases[1].drawing = PKDrawing()
@@ -177,104 +176,84 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
     }
     
     private func onAllStrokesCompleted() {
-        // MVC: Save Both
         WritingGameplayManager.shared.saveTwoDrawings(
             top: paneCommittedCanvases[0].drawing,
             bottom: paneCommittedCanvases[1].drawing,
             index: currentIndex,
             category: categoryKey
         )
+        WritingGameplayManager.shared.finalizeSession(
+            index: currentIndex,
+            category: categoryKey,
+            mistakes: WritingGameplayManager.shared.sessionMistakes,
+            contentType: contentType
+        )
         
         alphabetCollectionView.reloadData()
         nextChevronButton.isEnabled = true
         nextChevronButton.alpha = 1.0
-        
-        // Analytics
-        let penalty = mistakeCount * 10
-        let performanceScore = max(0, 100 - penalty)
-        
-        let session = WritingSessionData(
-            id: UUID(),
-            date: Date(),
-            childId: "default_child",
-            lettersAccuracy: contentType == .letters ? performanceScore : 0,
-            wordsAccuracy: 0,
-            numbersAccuracy: contentType == .numbers ? performanceScore : 0
-        )
-        AnalyticsStore.shared.appendWritingSession(session)
-        
-        // Reset Mistakes
-        WritingGameplayManager.shared.saveMistakeCount(0, index: currentIndex, category: categoryKey)
+        traceCompleteButton.backgroundColor = .systemGreen
     }
 
     // MARK: - Actions
     @IBAction func traceCompleteTapped(_ sender: Any) {
-        // Check for Red Error State (handled visually by Base via ShapeLayer color)
-        if paneShapeLayers[0].strokeColor == UIColor.red.cgColor ||
-           paneShapeLayers[1].strokeColor == UIColor.red.cgColor {
-            return
-        }
-        
-        var didAdvanceTop = false
-        var didAdvanceBottom = false
-        
-        // Process Top Pane
-        if !paneIsCompleted[0] {
-            didAdvanceTop = checkAndCommitGreenInk(paneIndex: 0)
-        }
-        
-        // Process Bottom Pane
-        if !paneIsCompleted[1] {
-            didAdvanceBottom = checkAndCommitGreenInk(paneIndex: 1)
-        }
-        
-        // Check Completion
-        if paneIsCompleted[0] && paneIsCompleted[1] {
-            onAllStrokesCompleted()
-            
-            let penalty = mistakeCount * 10
-            let accuracy = max(0, 100 - penalty)
-            if accuracy >= 80 {
-                showStickerFromBottom(assetName: "sticker")
+            if paneShapeLayers[0].strokeColor == UIColor.red.cgColor ||
+               paneShapeLayers[1].strokeColor == UIColor.red.cgColor {
+                return
             }
-        } else if !didAdvanceTop && !didAdvanceBottom {
-            // Neither pane made progress
-            flashIncompleteWarning()
-        }
-        
-        // Clear transient lines if completed
-        if paneIsCompleted[0] { resetTransientLayer(paneIndex: 0) }
-        if paneIsCompleted[1] { resetTransientLayer(paneIndex: 1) }
+            
+            if isFullyCompleted { return }
+
+            var didAdvanceAny = false
+            
+            if !paneIsCompleted[0] {
+                if checkAndCommitGreenInk(paneIndex: 0) {
+                    didAdvanceAny = true
+                    resetTransientLayer(paneIndex: 0)
+                }
+            }
+            
+            if !paneIsCompleted[1] {
+                if checkAndCommitGreenInk(paneIndex: 1) {
+                    didAdvanceAny = true
+                    resetTransientLayer(paneIndex: 1)
+                }
+            }
+            
+            if isFullyCompleted {
+                onAllStrokesCompleted()
+                
+                if WritingGameplayManager.shared.didEarnSticker() {
+                    showStickerFromBottom(assetName: "sticker")
+                }
+            } else if !didAdvanceAny {
+                flashIncompleteWarning()
+            }
     }
     
     @IBAction func retryTapped(_ sender: UIButton) {
         let topCompleted = paneIsCompleted[0]
         let bottomCompleted = paneIsCompleted[1]
-        
-        // Smart Retry Logic: Only clear the incomplete pane
         switch (topCompleted, bottomCompleted) {
         case (true, false):
-            // Top is done, reset Bottom only
             resetPane(1)
             
         case (false, true):
-            // Bottom is done, reset Top only
             resetPane(0)
             
         case (true, true), (false, false):
-            // Both done or both empty -> Full Reset
             resetPane(0)
             resetPane(1)
         }
         
         isTracingLocked = false
     }
+    @IBAction func playTapped(_ sender: Any) {
+        startTraceAnimationForPane0(force: false)
+    }
     
     private func resetPane(_ index: Int) {
-        resetTransientLayer(paneIndex: index)
-        paneCommittedCanvases[index].drawing = PKDrawing()
-        paneIsCompleted[index] = false
-        paneCurrentMaskIndex[index] = 0
+        resetPaneCompletely(index)
     }
     
     @IBAction func backTapped(_ sender: UIButton) { goBack() }
@@ -301,8 +280,19 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
         }
     }
     
-    @IBAction func speakerButtonTapped(_ sender: UIButton) {
-        let textToSpeak = (contentType == .letters) ? String(UnicodeScalar(65 + currentIndex)!) : "\(currentIndex)"
+    @IBAction func speakerButtonTapped(_ sender: Any) {
+        let textToSpeak: String
+        switch contentType {
+        case .words: fatalError("Words not supported in OneLetterTraceViewController")
+        case .letters:
+            textToSpeak = WritingGameplayManager.shared.getCharacterString(
+                for: currentIndex,
+                contentType: contentType
+            )
+        case .numbers:
+            textToSpeak = "\(currentIndex)"
+        }
+        
         let utterance = AVSpeechUtterance(string: textToSpeak)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-AU")
         utterance.rate = 0.5
@@ -311,9 +301,10 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
     
     @IBAction func letterButtonTapped(_ sender: UIButton) {
         let index = sender.tag
-        let unlocked = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
-        
-        guard index <= unlocked else { return }
+        guard WritingGameplayManager.shared.isIndexUnlocked(
+            index: index,
+            category: categoryKey
+        ) else { return }
         
         let vc = storyboard!.instantiateViewController(withIdentifier: "OneLetterTraceVC") as! OneLetterTraceViewController
         vc.contentType = contentType
@@ -352,15 +343,11 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
     
     private func updateNextChevronState() {
         let unlocked = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
-        
-        // 1. History Check
         if currentIndex < unlocked {
             nextChevronButton.isEnabled = true
             nextChevronButton.alpha = 1.0
             return
         }
-        
-        // 2. Current Check
         if let (top, bottom) = WritingGameplayManager.shared.loadTwoDrawings(index: currentIndex, category: categoryKey) {
              let isComplete = !top.strokes.isEmpty && !bottom.strokes.isEmpty
              nextChevronButton.isEnabled = isComplete
@@ -374,7 +361,8 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
     // MARK: - CollectionView DataSource & Delegate
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch contentType {
-        case .letters: return 26
+        case .words: fatalError("Words not supported in OneLetterTraceViewController")
+        case .letters: return 52
         case .numbers: return 10
         }
     }
@@ -384,9 +372,16 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
         guard let button = cell.contentView.subviews.first as? UIButton else { return cell }
         
         let itemIndex = indexPath.item
-        let titleString = (contentType == .letters) ? String(UnicodeScalar(65 + itemIndex)!) : "\(itemIndex)"
+        var titleString = ""
+            if contentType == .letters {
+                titleString = WritingGameplayManager.shared.getCharacterString(
+                    for: itemIndex,
+                    contentType: contentType
+                )
+            } else {
+                titleString = "\(itemIndex)"
+            }
         
-        // MVC: Check Status
         let unlockedIndex = WritingGameplayManager.shared.getHighestUnlockedIndex(category: categoryKey)
         let isUnlocked = itemIndex <= unlockedIndex
         let isCompleted = itemIndex < unlockedIndex
@@ -429,10 +424,9 @@ class TwoLetterTraceViewController: BaseTraceViewController, UICollectionViewDat
         return CGSize(width: 60, height: 60)
     }
     
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) -> UIImageView {
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath){
         cell.layoutIfNeeded()
         cell.layer.cornerRadius = cell.bounds.height / 2
         cell.clipsToBounds = true
-        return UIImageView() // Just to satisfy return type if needed, or void
     }
 }

@@ -29,7 +29,6 @@ final class RhymeWordsViewController: UIViewController,
     var startingIndex: Int?
     var coverWasShown: Bool = false
     
-    // We fetch the current index from the Manager now
     var currentIndex: Int {
         return PhonicsGameplayManager.shared.getCurrentIndex()
     }
@@ -38,7 +37,6 @@ final class RhymeWordsViewController: UIViewController,
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var hasSpeakerBeenTapped = false
     
-    // Data Source
     private var questions: [RhymeQuestion] = []
     private var targetWord = ""
     private var options: [String] = []
@@ -68,10 +66,8 @@ final class RhymeWordsViewController: UIViewController,
 
     // MARK: - Configuration
     private func configureGameData() {
-        // 1. Load Data
-        questions = RhymeQuestionLoader.loadQuestions()
+        self.questions = BundleDataLoader.shared.load("RhymeWordsQuestions", as: [RhymeQuestion].self)
         
-        // 2. Start Manager Session
         PhonicsGameplayManager.shared.startSession(
             for: .rhyme,
             totalQuestions: questions.count,
@@ -126,6 +122,7 @@ final class RhymeWordsViewController: UIViewController,
     }
 
     private func moveToNextQuestion() {
+        removeSticker()
         PhonicsGameplayManager.shared.advanceToNext()
         loadCurrentQuestion()
     }
@@ -183,7 +180,7 @@ final class RhymeWordsViewController: UIViewController,
         submitButton.setTitle("Next", for: .normal)
         optionButtons.forEach { $0.isUserInteractionEnabled = false }
         showFeedback("Correct!", color: .systemGreen)
-        triggerConfetti()
+        showStickerAtTopRight(assetName: "YouDidIt", horizontalOffset: 15)
     }
 
     private func showFeedback(_ text: String, color: UIColor) {
@@ -205,7 +202,6 @@ final class RhymeWordsViewController: UIViewController,
         if let coverVC = navigationController?.viewControllers
             .compactMap({ $0 as? PhonicsCoverViewController })
             .last {
-            // Pass current pointer back to cover
             coverVC.resumeCyclePointer = PhonicsGameplayManager.shared.getCyclePointer()
         }
         goBackToPhonicsCover()

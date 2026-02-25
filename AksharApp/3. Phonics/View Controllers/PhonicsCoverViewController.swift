@@ -50,10 +50,11 @@ class PhonicsCoverViewController: UIViewController {
     }
 
     @IBAction func homeButtonTapped(_ sender: Any) {
-        guard let nav = navigationController else { return }
-
-        if let homeVC = nav.viewControllers.first(where: { $0 is HomeViewController }) {
-            nav.popToViewController(homeVC, animated: true)
-        }
+//        guard let nav = navigationController else { return }
+//
+//        if let homeVC = nav.viewControllers.first(where: { $0 is HomeViewController }) {
+//            nav.popToViewController(homeVC, animated: true)
+//        }
+        goHomeFromPhonics()
     }
 }

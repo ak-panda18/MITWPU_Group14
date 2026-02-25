@@ -12,11 +12,9 @@ class OCRManager {
     private let fileManager = FileManager.default
     private let indexFileName = "index.json"
     
-    private var documentsURL: URL {
-        return fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-    }
+    private let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     
-    private init() {
+    init() {
         loadIndex()
     }
     
@@ -36,37 +34,39 @@ class OCRManager {
         return nil
     }
     
-    // MARK: - Core Action: Process New Scan
+    func getPages(for doc: StoredDoc) -> [String]? {
+        guard let pagesFile = doc.pagesFileName else { return nil }
+        let url = documentsURL.appendingPathComponent(pagesFile)
+        
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode([String].self, from: data)
+    }
+        
+    // MARK: - Process New Scan
     func processNewDocument(images: [UIImage], completion: @escaping (StoredDoc) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             
-            // 1. Perform OCR (Improved Logic)
             let ocrPages = self.recognizeTextPerPage(in: images)
             
-            // 2. Prepare Metadata
             let id = UUID().uuidString
-//            let dateText = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .none)
             let title = "Untitled"
             
-            // 3. Save Files
             let fileName = self.saveDocumentImages(images, id: id)
             let thumbName = self.saveThumbnail(from: images.first, id: id)
             let pagesName = self.savePagesJSON(ocrPages, id: id)
             let textName = self.saveFullText(ocrPages, id: id)
             
-            // 4. Create Document Object
             let newDoc = StoredDoc(
                             id: id,
                             title: title,
-                            createdDate: Date(), // <--- CHANGE THIS: Pass raw Date() object
+                            createdDate: Date(),
                             fileName: fileName,
                             thumbnailFileName: thumbName,
                             ocrTextFileName: textName,
                             pagesFileName: pagesName
                         )
             
-            // 5. Update Local Index & Cache
             DispatchQueue.main.async {
                 self.documents.insert(newDoc, at: 0)
                 if let firstImg = images.first {
@@ -138,7 +138,6 @@ class OCRManager {
     }
     
     // MARK: - Internal Helpers
-    
     private func saveIndex() {
         if let data = try? JSONEncoder().encode(documents) {
             try? data.write(to: documentsURL.appendingPathComponent(indexFileName))
@@ -158,7 +157,7 @@ class OCRManager {
         }
     }
     
-    // MARK: - Improved OCR Logic (Fixes Centering & Hyphens)
+    // MARK: - Fixes Centering & Hyphens)
     private func recognizeTextPerPage(in images: [UIImage]) -> [String] {
         var pagesResult: [String] = []
 
@@ -183,7 +182,6 @@ class OCRManager {
                     continue
                 }
                 
-                // 1. Calculate Page Geometry to detect centering
                 let xMins = observations.map { $0.boundingBox.minX }.sorted()
                 let xMaxs = observations.map { $0.boundingBox.maxX }.sorted()
                 
@@ -195,7 +193,6 @@ class OCRManager {
                 var fullPageText = ""
                 var previousObs: VNRecognizedTextObservation?
                 
-                // 2. Iterate line by line
                 for obs in observations {
                     guard let candidate = obs.topCandidates(1).first else { continue }
                     var text = candidate.string
@@ -203,7 +200,6 @@ class OCRManager {
                     let lineMidX = obs.boundingBox.midX
                     let lineWidth = obs.boundingBox.width
                     
-                    // Logic: If line is short and roughly in the middle, it's a Title
                     let isShortLine = lineWidth < (pageWidth * 0.85)
                     let isAlignedToCenter = abs(lineMidX - textBlockCenter) < (pageWidth * 0.15)
                     let isCentered = isShortLine && isAlignedToCenter
@@ -218,45 +214,35 @@ class OCRManager {
                         let verticalGap = prevBottom - currTop
                         let lineHeight = prev.boundingBox.height
                         
-                        // Detect Paragraphs
                         let isPrevShort = (prev.boundingBox.maxX < (medianMaxX - (pageWidth * 0.15)))
                         let isBigGap = verticalGap > (lineHeight * 1.3)
                         let isIndented = !isCentered && (obs.boundingBox.minX > (medianMinX + (pageWidth * 0.05)))
                         
-                        // HYPHENATION CHECK (Fixes "eter- \n nity")
                         var isHyphenated = false
                         if let lastCharIndex = fullPageText.lastIndex(where: { !$0.isWhitespace }),
                            fullPageText[lastCharIndex] == "-" {
                             isHyphenated = true
-                            // Remove the hyphen to merge "eter-" and "nity" into "eternity"
                             fullPageText = String(fullPageText[..<lastCharIndex])
                         }
                         
-                        // --- Merge Logic ---
                         if isHyphenated {
-                            // Merge directly (no space, no newline) -> "eternity"
                             fullPageText += text
                         }
                         else if isCentered {
-                            // Centered titles always get their own newlines
                             fullPageText += "\n\n" + text
                         }
                         else if isBigGap || (isPrevShort && !isHyphenated) || isIndented {
-                            // Start new paragraph
                             fullPageText += "\n\n" + text
                         }
                         else {
-                            // Standard line continuation: Merge with a space
                             fullPageText += " " + text
                         }
                     } else {
-                        // First line of page
                         if isCentered && !text.contains("<CENTER>") {
                             text = "<CENTER>" + text
                         }
                         fullPageText = text
                     }
-                    
                     previousObs = obs
                 }
                 
@@ -272,11 +258,9 @@ class OCRManager {
     }
     
     // MARK: - Saving Helpers
-    
     private func saveDocumentImages(_ images: [UIImage], id: String) -> String {
         if images.count > 1 {
             let name = "\(id).pdf"
-            // Use Restored logic using original image size
             if let first = images.first {
                 let pageRect = CGRect(origin: .zero, size: first.size)
                 let renderer = UIGraphicsPDFRenderer(bounds: pageRect)

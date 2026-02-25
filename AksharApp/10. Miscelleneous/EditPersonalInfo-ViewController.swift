@@ -15,32 +15,26 @@ class EditPersonalInfo_ViewController: UIViewController, UIPickerViewDataSource,
     @IBOutlet weak var saveButton: UIBarButtonItem!
     @IBOutlet weak var cancelButton: UIBarButtonItem!
     
-    // Delegate
     weak var delegate: EditPersonalInfoDelegate?
     
-    // Properties to receive current values
     var currentFirstName: String?
     var currentLastName: String?
     var currentAge: String?
     var currentGender: String?
     
-    // Gender options for picker
     let genderOptions = ["Male", "Female", "Other"]
     var selectedGender: String = "Male"
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Setup picker
         genderPicker.dataSource = self
         genderPicker.delegate = self
         
-        // Populate fields with current values
         firstNameTextField.text = currentFirstName
         lastNameTextField.text = currentLastName
         ageTextField.text = currentAge
         
-        // Set picker to current gender
         if let gender = currentGender, let index = genderOptions.firstIndex(of: gender) {
             genderPicker.selectRow(index, inComponent: 0, animated: false)
             selectedGender = gender
@@ -48,7 +42,6 @@ class EditPersonalInfo_ViewController: UIViewController, UIPickerViewDataSource,
     }
     
     // MARK: - UIPickerView DataSource
-    
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
         return 1
     }
@@ -74,7 +67,6 @@ class EditPersonalInfo_ViewController: UIViewController, UIPickerViewDataSource,
     }
     
     @IBAction func saveButtonTapped(_ sender: UIBarButtonItem) {
-        // Get the updated values
           let updatedFirstName = firstNameTextField.text ?? ""
           let updatedLastName = lastNameTextField.text ?? ""
           let updatedAge = ageTextField.text ?? ""
@@ -87,10 +79,8 @@ class EditPersonalInfo_ViewController: UIViewController, UIPickerViewDataSource,
           print("Gender: \(updatedGender)")
           print("Delegate is nil: \(delegate == nil)")
           
-          // Pass data back through delegate
           delegate?.didUpdatePersonalInfo(firstName: updatedFirstName, lastName: updatedLastName, age: updatedAge, gender: updatedGender)
           
-          // Dismiss the modal
           dismiss(animated: true, completion: nil)
     }
 }

@@ -36,16 +36,28 @@ final class ReadingPreviewViewController: UIViewController {
     @IBOutlet weak var readButton1: UIButton!
     // MARK: - Properties
 
-    private let storiesResponse = StoriesResponse()
+    
     private let difficultyLevels = ["Level 1", "Level 2", "Level 3"]
 
     private var levelStories: [Story] = []
     private var levelIndex = 0
+    private var cardViews: [UIView] = []
+
+    // MARK: - Glow Effect Properties
+    private var idleTimer: Timer?
+    private var glowStopTimer: Timer?
+
+    private let initialIdleDelay: TimeInterval = 2
+    private let glowDuration: TimeInterval = 4
+    private let gapBetweenGlows: TimeInterval = 4
+
+    private var highlightedIndexPath: IndexPath?
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        cardViews = [card1bg_view, card2bg_view, card3bg_view, card4bg_view]
         styleCards()
     }
 
@@ -54,55 +66,170 @@ final class ReadingPreviewViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: false)
         loadCurrentLevel()
     }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        startIdleTimer()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        idleTimer?.invalidate()
+        glowStopTimer?.invalidate()
+        cancelHighlight()
+    }
 
     // MARK: - Level Handling
-
     private func loadCurrentLevel() {
-        levelIndex = max(0, min(levelIndex, difficultyLevels.count - 1))
+        levelLabel.text = difficultyLevels[levelIndex]
+       
+        levelStories = StoryManager.shared.getStories(for: difficultyLevels[levelIndex])
+        
+        setupCards()
+    }
+    
+    private func setupCards() {
+        let covers = [cover1, cover2, cover3, cover4]
+        let titles = [title1, title2, title3, title4]
+        let backgrounds = [card1bg_view, card2bg_view, card3bg_view, card4bg_view]
+        let progressViews = [progress1, progress2, progress3, progress4]
+        let buttons = [readButton1, readButton2, readButton3, readButton4]
+
+        for i in 0..<4 {
+            guard let cover = covers[i], let title = titles[i],
+                  let bg = backgrounds[i], let progress = progressViews[i],
+                  let button = buttons[i] else { continue }
+
+            if i < levelStories.count {
+                let story = levelStories[i]
+                
+                bg.isHidden = false
+                title.text = story.title
+                cover.image = UIImage(named: story.coverImage)
+                
+                bg.layer.cornerRadius = 20
+                cover.layer.cornerRadius = 20
+                bg.layer.masksToBounds = false
+                
+                updateReadButton(button: button, progressView: progress, story: story)
+                
+            } else {
+                bg.isHidden = true
+            }
+        }
+    }
+    
+    private func updateReadButton(button: UIButton, progressView: UIProgressView, story: Story) {
+        let (savedIndex, isCompleted) = StoryManager.shared.getProgress(for: story.id)
+        let totalPages = max(1, story.content.count)
+        
+        if isCompleted {
+            button.setTitle("Read Again", for: .normal)
+            progressView.progress = 1.0
+        } else if savedIndex > 0 {
+            button.setTitle("Continue", for: .normal)
+            progressView.progress = Float(savedIndex) / Float(totalPages)
+        } else {
+            button.setTitle("Read", for: .normal)
+            progressView.progress = 0.0
+        }
+    }
+    
+    // MARK: - Glow Effect
+    private func startIdleTimer() {
+
+        idleTimer?.invalidate()
+
+        idleTimer = Timer.scheduledTimer(
+            withTimeInterval: initialIdleDelay,
+            repeats: false
+        ) { [weak self] _ in
+            self?.startGlowCycle()
+        }
+    }
+    
+    private func startGlowCycle() {
+
+        triggerHighlightIfNeeded()
+
+        glowStopTimer?.invalidate()
+        glowStopTimer = Timer.scheduledTimer(
+            withTimeInterval: glowDuration,
+            repeats: false
+        ) { [weak self] _ in
+            self?.stopGlowAndScheduleNext()
+        }
+    }
+    
+    private func triggerHighlightIfNeeded() {
+
         let difficulty = difficultyLevels[levelIndex]
 
-        levelStories = storiesResponse.getStories(difficulty: difficulty)
+        guard let index = StoryManager.shared.indexToHighlight(for: difficulty) else { return }
 
-        configureCard(
-            index: 0,
-            titleLabel: title1,
-            imageView: cover1,
-            progressView: progress1,
-            readButton: readButton1
-        )
+        highlightedIndexPath = IndexPath(item: index, section: 0)
 
-        configureCard(
-            index: 1,
-            titleLabel: title2,
-            imageView: cover2,
-            progressView: progress2,
-            readButton: readButton2
-        )
+        let targetView = cardViews[index]
 
-        configureCard(
-            index: 2,
-            titleLabel: title3,
-            imageView: cover3,
-            progressView: progress3,
-            readButton: readButton3
-        )
+        targetView.layoutIfNeeded()
 
-        configureCard(
-            index: 3,
-            titleLabel: title4,
-            imageView: cover4,
-            progressView: progress4,
-            readButton: readButton4
-        )
+        startGlowAnimation(on: targetView)
+        startPopAnimation(on: targetView)
+    }
+    
+    private func stopGlowAndScheduleNext() {
 
+        cancelHighlight()
 
-        levelLabel.text = difficulty
-        prevLevelButton.isEnabled = levelIndex > 0
-        nextLevelButton.isEnabled = levelIndex < difficultyLevels.count - 1
+        idleTimer?.invalidate()
+        idleTimer = Timer.scheduledTimer(
+            withTimeInterval: gapBetweenGlows,
+            repeats: false
+        ) { [weak self] _ in
+            self?.startGlowCycle()
+        }
+    }
+    
+    private func startGlowAnimation(on view: UIView) {
+
+        view.layer.shadowColor = UIColor.systemYellow.cgColor
+        view.layer.shadowRadius = 12
+        view.layer.shadowOffset = .zero
+
+        let anim = CABasicAnimation(keyPath: "shadowOpacity")
+        anim.fromValue = 0
+        anim.toValue = 0.9
+        anim.duration = 1.0
+        anim.autoreverses = true
+        anim.repeatCount = .infinity
+
+        view.layer.add(anim, forKey: "glow")
+    }
+    
+    private func startPopAnimation(on view: UIView) {
+
+        let anim = CABasicAnimation(keyPath: "transform.scale")
+        anim.fromValue = 1
+        anim.toValue = 1.04
+        anim.duration = 1.0
+        anim.autoreverses = true
+        anim.repeatCount = .infinity
+
+        view.layer.add(anim, forKey: "pop")
+    }
+    
+    private func cancelHighlight() {
+
+        if let index = highlightedIndexPath?.item {
+
+            let view = cardViews[index]
+
+            view.layer.removeAnimation(forKey: "glow")
+            view.layer.removeAnimation(forKey: "pop")
+        }
+
+        highlightedIndexPath = nil
     }
 
     // MARK: - Card Configuration
-
     private func configureCard(
             index: Int,
             titleLabel: UILabel,
@@ -111,7 +238,6 @@ final class ReadingPreviewViewController: UIViewController {
             readButton: UIButton
         ) {
             guard index < levelStories.count else {
-                // Hide empty slots
                 titleLabel.text = ""
                 imageView.image = nil
                 progressView.isHidden = true
@@ -122,11 +248,8 @@ final class ReadingPreviewViewController: UIViewController {
             let story = levelStories[index]
             titleLabel.text = story.title
             imageView.image = UIImage(named: story.coverImage)
-            
-            // 1. MVC: Ask Manager for the source of truth (Core Data)
             let (savedIndex, isCompleted) = StoryManager.shared.getProgress(for: story.id)
             
-            // 2. Update Progress Bar
             let totalPages = max(story.content.count, 1)
             if isCompleted {
                 progressView.progress = 1.0
@@ -135,11 +258,9 @@ final class ReadingPreviewViewController: UIViewController {
             }
             progressView.isHidden = false
             
-            // 3. Update Button State
             var config = readButton.configuration ?? .filled()
             config.title = isCompleted ? "Read Again" : "Read"
             
-            // Restore Font Styling
             var container = AttributeContainer()
             container.font = UIFont.systemFont(ofSize: 18, weight: .bold)
             config.attributedTitle = AttributedString(config.title ?? "", attributes: container)
@@ -148,57 +269,33 @@ final class ReadingPreviewViewController: UIViewController {
             readButton.isHidden = false
         }
     
-//    private func updateProgress(for story: Story, progressView: UIProgressView) {
-//        let totalPages = max(story.content.count, 1)
-//
-//        let isCompleted = UserDefaults.standard.bool(
-//            forKey: completedKey(for: story)
-//        )
-//
-//        if isCompleted {
-//            progressView.progress = 1.0
-//        } else {
-//            let savedIndex = UserDefaults.standard.integer(
-//                forKey: progressKey(for: story)
-//            )
-//            progressView.progress = Float(savedIndex + 1) / Float(totalPages)
-//        }
-//
-//        progressView.isHidden = false
-//    }
-
     // MARK: - Navigation
-
-    private func openStory(at index: Int) {
-        guard index < levelStories.count,
-              let storyboard = storyboard else { return }
-        
-        let story = levelStories[index]
-        
-        // 1. Get saved page from Manager
-        let (savedIndex, isCompleted) = StoryManager.shared.getProgress(for: story.id)
-        
-        // 2. Decide where to start (0 if finished, otherwise resume)
-        let pageIndex = isCompleted ? 0 : min(max(0, savedIndex), story.content.count - 1)
-        let page = story.content[pageIndex]
-        
-        // 3. Navigate
-        if let imageName = page.imageURL, !imageName.isEmpty {
-            let vc = storyboard.instantiateViewController(withIdentifier: "ImageLabelReadingVC") as! ImageLabelReadingViewController
-            vc.story = story
-            vc.currentIndex = pageIndex
-            vc.storyTextString = page.text
-            vc.imageName = imageName
-            // Note: We don't pass 'readingSession' here; the new VC will start its own.
-            navigationController?.pushViewController(vc, animated: true)
-        } else {
-            let vc = storyboard.instantiateViewController(withIdentifier: "LabelReadingVC") as! LabelReadingViewController
-            vc.story = story
-            vc.currentIndex = pageIndex
-            vc.storyTextString = page.text
-            navigationController?.pushViewController(vc, animated: true)
+        private func openStory(at index: Int) {
+            guard index < levelStories.count,
+                  let storyboard = storyboard else { return }
+            
+            let story = levelStories[index]
+            
+            let (savedIndex, isCompleted) = StoryManager.shared.getProgress(for: story.id)
+            
+            let pageIndex = isCompleted ? 0 : min(max(0, savedIndex), story.content.count - 1)
+            let page = story.content[pageIndex]
+            
+            if let imageName = page.imageURL, !imageName.isEmpty {
+                let vc = storyboard.instantiateViewController(withIdentifier: "ImageLabelReadingVC") as! ImageLabelReadingViewController
+                vc.story = story
+                vc.currentIndex = pageIndex
+                vc.storyTextString = page.text
+                vc.imageName = imageName
+                navigationController?.pushViewController(vc, animated: true)
+            } else {
+                let vc = storyboard.instantiateViewController(withIdentifier: "LabelReadingVC") as! LabelReadingViewController
+                vc.story = story
+                vc.currentIndex = pageIndex
+                vc.storyTextString = page.text
+                navigationController?.pushViewController(vc, animated: true)
+            }
         }
-    }
 
     // MARK: - Styling
     private func styleCards() {
@@ -223,19 +320,6 @@ final class ReadingPreviewViewController: UIViewController {
         cover.layer.cornerRadius = 25
         cover.clipsToBounds = true
     }
-
-//    // MARK: - Helpers
-//    private func progressKey(for story: Story) -> String {
-//        "StoryProgress_\(story.title.replacingOccurrences(of: " ", with: ""))"
-//    }
-//    
-//    private func completedKey(for story: Story) -> String {
-//        "StoryCompleted_\(story.title.replacingOccurrences(of: " ", with: ""))"
-//    }
-//
-//    private func replayStartedKey(for story: Story) -> String {
-//        "StoryReplayStarted_\(story.title.replacingOccurrences(of: " ", with: ""))"
-//    }
 
     // MARK: - Actions
     @IBAction func prevLevelTapped(_ sender: UIButton) {

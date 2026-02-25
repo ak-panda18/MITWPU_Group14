@@ -8,6 +8,7 @@
 enum WritingContentType {
     case letters
     case numbers
+    case words
 }
 
 enum TracingCategory: String {

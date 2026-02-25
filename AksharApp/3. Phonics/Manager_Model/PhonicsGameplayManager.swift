@@ -9,35 +9,32 @@ class PhonicsGameplayManager {
     private var currentCycleKey: String = ""
     private var hasSavedSession = false
     
-    private init() {}
-    
-    // MARK: - Setup
+    init() {}
     
     func startSession(for exercise: ExerciseType, totalQuestions: Int, startPointer: Int) {
-        self.hasSavedSession = false
-        self.currentCycleKey = cycleKey(for: exercise)
-        
-        // Load existing cycle or create new one
-        if let savedCycle = self.loadCycle(key: currentCycleKey) {
-            self.cycle = savedCycle
-        } else {
-            self.cycle = RandomizedQuestionCycle(count: totalQuestions, startPointer: startPointer)
+            self.hasSavedSession = false
+            
+            self.currentCycleKey = exercise.cycleKey
+            
+            if let savedCycle = self.loadCycle(key: currentCycleKey) {
+                self.cycle = savedCycle
+            } else {
+                self.cycle = RandomizedQuestionCycle(count: totalQuestions, startPointer: startPointer)
+            }
+            
+            self.session = PhonicsSessionData(
+                id: UUID(),
+                date: Date(),
+                childId: "default_child",
+                exerciseType: exercise.exerciseKey,
+                correctCount: 0,
+                totalAttempts: 0,
+                startTime: Date(),
+                endTime: nil
+            )
         }
-        
-        self.session = PhonicsSessionData(
-            id: UUID(),
-            date: Date(),
-            childId: "default_child",
-            exerciseType: exerciseKey(for: exercise),
-            correctCount: 0,
-            totalAttempts: 0,
-            startTime: Date(),
-            endTime: nil
-        )
-    }
     
     // MARK: - Game Loop
-    
     func getCurrentIndex() -> Int {
         return cycle?.currentIndex() ?? 0
     }
@@ -91,32 +88,9 @@ class PhonicsGameplayManager {
         }
         return cycle
     }
-    
-    // MARK: - Helpers
-    
-    private func cycleKey(for type: ExerciseType) -> String {
-        switch type {
-        case .rhyme: return "rhyme_words_cycle"
-        case .detective: return "sound_detector_cycle"
-        case .quizMyStory: return "quiz_my_story_cycle"
-        case .fluency: return "fluency_cycle"
-        case .wordBuilder: return "word_builder_cycle"
-        }
-    }
-    
-    private func exerciseKey(for type: ExerciseType) -> String {
-        switch type {
-        case .rhyme: return "rhyme_words"
-        case .detective: return "sound_detector"
-        case .quizMyStory: return "quiz_my_story"
-        case .fluency: return "fluency_drill"
-        case .wordBuilder: return "word_builder"
-        }
-    }
 }
 
 // MARK: - Merged Helper Logic
-// This struct is now internal to this file, so you can delete the separate file.
 struct RandomizedQuestionCycle: Codable {
     private(set) var indices: [Int]
     private(set) var pointer: Int

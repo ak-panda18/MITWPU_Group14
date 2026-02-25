@@ -4,20 +4,23 @@ import UIKit
 
 // MARK: - The State Model (Clean JSON)
 struct WritingProgressState: Codable {
-    var unlockedIndices: [String: Int] = [:]   // Highest unlocked index
-    var mistakeCounts: [String: Int] = [:]     // Analytics
-    var lastActiveCategory: String = "3-letter" // For Dashboard
+    var unlockedIndices: [String: Int] = [:]   
+    var mistakeCounts: [String: Int] = [:]
+    var lastActiveCategory: String = "3-letter"
 }
 
-final class WritingGameplayManager {
+class WritingGameplayManager {
     static let shared = WritingGameplayManager()
     
     private let progressFileName = "writing_progress.json"
     private var state: WritingProgressState = WritingProgressState()
     
-    private init() {
+    private(set) var sessionMistakes: Int = 0
+    
+    init() {
         loadProgress()
     }
+    
     
     // MARK: - Public Properties
     var lastActiveCategory: String {
@@ -29,7 +32,6 @@ final class WritingGameplayManager {
     }
     
     // MARK: - Progress & Unlocking
-    
     func getHighestUnlockedIndex(category: String) -> Int {
         return state.unlockedIndices[category] ?? 0
     }
@@ -43,7 +45,6 @@ final class WritingGameplayManager {
     }
     
     // MARK: - Mistakes (Analytics)
-    
     func getMistakeCount(index: Int, category: String) -> Int {
         return state.mistakeCounts["\(category)_\(index)"] ?? 0
     }
@@ -54,7 +55,6 @@ final class WritingGameplayManager {
     }
     
     // MARK: - Drawing Management
-    
     private func getDrawingURL(index: Int, category: String, stage: String, part: String) -> URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let safeCat = category.replacingOccurrences(of: " ", with: "_")
@@ -62,7 +62,6 @@ final class WritingGameplayManager {
         return docs.appendingPathComponent(filename)
     }
     
-    // --- Generic Save/Load ---
     func saveDrawing(_ drawing: PKDrawing, index: Int, category: String, stage: String, part: String = "main") {
         let url = getDrawingURL(index: index, category: category, stage: stage, part: part)
         try? drawing.dataRepresentation().write(to: url)
@@ -82,11 +81,8 @@ final class WritingGameplayManager {
     }
     
     // MARK: - Specific Stage Helpers
-    
-    // 1. One Word/Letter
     func saveOneDrawing(_ drawing: PKDrawing, index: Int, category: String) {
         saveDrawing(drawing, index: index, category: category, stage: "one")
-        // NOTE: We do NOT unlock the next item here. The user must finish all 3 stages.
     }
     
     func loadOneDrawing(index: Int, category: String) -> PKDrawing? {
@@ -97,7 +93,6 @@ final class WritingGameplayManager {
         deleteDrawing(index: index, category: category, stage: "one")
     }
     
-    // 2. Two Word/Letter
     func saveTwoDrawings(top: PKDrawing, bottom: PKDrawing, index: Int, category: String) {
         saveDrawing(top, index: index, category: category, stage: "two", part: "top")
         saveDrawing(bottom, index: index, category: category, stage: "two", part: "bottom")
@@ -116,12 +111,10 @@ final class WritingGameplayManager {
         deleteDrawing(index: index, category: category, stage: "two", part: "bottom")
     }
     
-    // 3. Six Word/Letter
     func saveSixDrawings(_ drawings: [PKDrawing], index: Int, category: String) {
         for (i, d) in drawings.enumerated() {
             saveDrawing(d, index: index, category: category, stage: "six", part: "\(i)")
         }
-        // Finishing the 6-word stage unlocks the NEXT word/letter in the sequence
         unlockNextItem(category: category, currentIndex: index)
     }
     
@@ -160,73 +153,185 @@ final class WritingGameplayManager {
             self.state = saved
         }
     }
-    
-    // MARK: - Navigation Decision Logic
-    func getNextViewController(for category: String, index: Int, contentType: WritingContentType? = nil, selectedWordCategory: TracingCategory? = nil) -> UIViewController {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        
-        // Stage 3 Check: If 2 drawings are already saved, move to the 6-pane stage
-        if loadTwoDrawings(index: index, category: category) != nil {
-            if let wordCat = selectedWordCategory {
-                let vc = storyboard.instantiateViewController(withIdentifier: "SixWordTraceVC") as! SixWordTraceViewController
-                vc.currentWordIndex = index
-                vc.selectedCategory = wordCat
-                return vc
-            } else {
-                let vc = storyboard.instantiateViewController(withIdentifier: "SixLetterTraceVC") as! SixLetterTraceViewController
-                vc.contentType = contentType ?? .letters
-                vc.currentIndex = index // Use base property directly
-                return vc
-            }
-        }
-        // Stage 2 Check: If 1 drawing is already saved, move to the 2-pane stage
-        else if loadOneDrawing(index: index, category: category) != nil {
-            if let wordCat = selectedWordCategory {
-                let vc = storyboard.instantiateViewController(withIdentifier: "TwoWordTraceVC") as! TwoWordTraceViewController
-                vc.currentWordIndex = index
-                vc.selectedCategory = wordCat
-                return vc
-            } else {
-                let vc = storyboard.instantiateViewController(withIdentifier: "TwoLetterTraceVC") as! TwoLetterTraceViewController
-                vc.contentType = contentType ?? .letters
-                vc.currentIndex = index
-                return vc
-            }
-        }
-        // Default to Stage 1
-        else {
-            if let wordCat = selectedWordCategory {
-                let vc = storyboard.instantiateViewController(withIdentifier: "OneWordTraceVC") as! OneWordTraceViewController
-                vc.currentWordIndex = index
-                vc.selectedCategory = wordCat
-                return vc
-            } else {
-                let vc = storyboard.instantiateViewController(withIdentifier: "OneLetterTraceVC") as! OneLetterTraceViewController
-                vc.contentType = contentType ?? .letters
-                vc.currentIndex = index
-                return vc
-            }
-        }
-    }
 
     // MARK: - Analytics & Progress Business Logic
-    func finalizeSession(index: Int, category: String, mistakes: Int, contentType: WritingContentType?) {
-        // Calculate performance (Business Logic belongs in the Model/Manager)
-        let penalty = mistakes * 10
-        let score = max(0, 100 - penalty)
-        
-        // Save to Analytics Store
+    func trackMistake(index: Int, category: String) {
+        sessionMistakes += 1
+        print("Mistake added. Current sessionMistakes =", sessionMistakes)
+    }
+    func finalizeSession(
+        index: Int,
+        category: String,
+        mistakes: Int,
+        contentType: WritingContentType?,
+        tracingCategory: TracingCategory? = nil
+    ) {
+
+        print("FINALIZING SESSION")
+        print("Mistakes:", mistakes)
+
+        let totalAttempts = mistakes + 1
+        let sessionScore = Int((1.0 / Double(totalAttempts)) * 100.0)
+
+        print("Session accuracy:", sessionScore)
+
+
+        let allSessions = AnalyticsStore.shared.fetchWritingSessions()
+        let relevantSessions: [WritingSessionData]
+
+        if contentType == .letters {
+            relevantSessions = allSessions.filter { $0.lettersAccuracy > 0 }
+        }
+        else if contentType == .numbers {
+            relevantSessions = allSessions.filter { $0.numbersAccuracy > 0 }
+        }
+        else {
+            relevantSessions = allSessions.filter { $0.wordsAccuracy > 0 }
+        }
+
+
+        let previousCount = relevantSessions.count
+
+        var finalScore = sessionScore
+
+        if previousCount > 0 {
+
+            let previousTotal = relevantSessions.reduce(0) { partial, session in
+                if contentType == .letters {
+                    return partial + session.lettersAccuracy
+                } else if contentType == .numbers {
+                    return partial + session.numbersAccuracy
+                } else {
+                    return partial + session.wordsAccuracy
+                }
+            }
+
+            let previousAverage = previousTotal / previousCount
+
+            finalScore = Int(
+                (Double(previousAverage * previousCount) + Double(sessionScore))
+                /
+                Double(previousCount + 1)
+            )
+
+            print("Previous average:", previousAverage)
+            print("New combined average:", finalScore)
+        }
+
         let session = WritingSessionData(
             id: UUID(),
             date: Date(),
             childId: "default_child",
-            lettersAccuracy: contentType == .letters ? score : 0,
-            wordsAccuracy: contentType == nil ? score : 0, // Words have nil contentType here
-            numbersAccuracy: contentType == .numbers ? score : 0
+            lettersAccuracy: contentType == .letters ? finalScore : 0,
+            wordsAccuracy: tracingCategory != nil ? finalScore : 0,
+            numbersAccuracy: contentType == .numbers ? finalScore : 0
         )
+
         AnalyticsStore.shared.appendWritingSession(session)
+
+        sessionMistakes = 0
+    }
+
+
+    // MARK: - Session Management
+    func startNewSession() {
+        sessionMistakes = 0
+    }
+    
+    func didEarnSticker() -> Bool {
+        return sessionMistakes <= 2
+    }
+
+    // MARK: - Dashboard Helpers (MVC Logic)
+    func getLastActiveItemDescription() -> String {
+        let category = state.lastActiveCategory
+        let index = getHighestUnlockedIndex(category: category)
         
-        // Reset mistakes for this item
-        saveMistakeCount(0, index: index, category: category)
+        if category == "letters" {
+            let baseIndex = index / 2
+            let isLowercase = (index % 2 != 0)
+            let asciiStart = isLowercase ? 97 : 65
+            
+            if baseIndex < 26 {
+                let charString = String(UnicodeScalar(asciiStart + baseIndex)!)
+                return "Letter: '\(charString)'"
+            }
+            return "Letter Tracing"
+            
+        } else if category == "numbers" {
+            return "Number: '\(index)'"
+        } else {
+            let allWords = TracingWordLoader.loadWords()
+            let categoryWords = allWords.words(for: category)
+            if !categoryWords.isEmpty {
+                let safeIndex = min(index, categoryWords.count - 1)
+                let word = categoryWords[safeIndex].word
+                return "Word: '\(word)'"
+            }
+            return "Word Tracing"
+        }
+    }
+    // MARK: - Letter / Number Helpers
+    func getCharacterString(for index: Int, contentType: WritingContentType) -> String {
+
+        switch contentType {
+        case .words:fatalError("Words not supported in OneLetterTraceViewController")
+        case .letters:
+            let baseIndex = index / 2
+            let isLowercase = (index % 2 != 0)
+            let asciiStart = isLowercase ? 97 : 65
+            return String(UnicodeScalar(asciiStart + baseIndex)!)
+
+        case .numbers:
+            return "\(index)"
+        }
+    }
+    
+    func isIndexUnlocked(index: Int, category: String) -> Bool {
+        let unlocked = getHighestUnlockedIndex(category: category)
+        return index <= unlocked
+    }
+    
+    // MARK: - Preview Display Helpers
+    func currentLetterDisplay() -> String {
+        let index = getHighestUnlockedIndex(category: "letters")
+        return getCharacterString(for: index, contentType: .letters)
+    }
+
+    func currentNumberDisplay() -> String {
+        let index = getHighestUnlockedIndex(category: "numbers")
+        return getCharacterString(for: index, contentType: .numbers)
+    }
+
+    func currentWordDisplay() -> String {
+        let category = lastActiveCategory
+        let words = TracingWordLoader.loadWords().words(for: category)
+
+        guard !words.isEmpty else { return "--" }
+
+        let index = getHighestUnlockedIndex(category: category)
+        let safeIndex = min(index, words.count - 1)
+        return words[safeIndex].word
+    }
+    
+    // MARK: - Progress Helpers
+    func progress(for category: String, total: Int) -> Float {
+        guard total > 0 else { return 0 }
+        let completed = getHighestUnlockedIndex(category: category)
+        return min(max(Float(completed) / Float(total), 0), 1)
+    }
+
+    func letterProgress() -> Float {
+        return progress(for: "letters", total: 52)
+    }
+
+    func numberProgress() -> Float {
+        return progress(for: "numbers", total: 10)
+    }
+
+    func wordProgress() -> Float {
+        let words = TracingWordLoader.loadWords().words(for: lastActiveCategory)
+        return progress(for: lastActiveCategory, total: words.count)
     }
 }
+

@@ -47,7 +47,6 @@ class ImageLabelReadingViewController: UIViewController, AVSpeechSynthesizerDele
         storyTitleLabel?.text = story.title
         
         if let currentStory = story {
-            let storageKey = "StoryProgress_\(currentStory.title.replacingOccurrences(of: " ", with: ""))"
             StoryManager.shared.saveProgress(storyId: story.id, pageIndex: currentIndex)
         }
         
@@ -243,9 +242,12 @@ extension ImageLabelReadingViewController: UICollectionViewDataSource {
         cell.storyText.isUserInteractionEnabled = true
         cell.storyText.gestureRecognizers?.forEach { cell.storyText.removeGestureRecognizer($0) }
         
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleLabelDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        cell.storyText.addGestureRecognizer(doubleTap)
+        let longPress = UILongPressGestureRecognizer(
+            target: self,
+            action: #selector(handleLabelLongPress(_:))
+        )
+        longPress.minimumPressDuration = 0.4
+        cell.storyText.addGestureRecognizer(longPress)
         
         return cell
     }
@@ -367,11 +369,9 @@ private extension ImageLabelReadingViewController {
     
 
     func goToPage(offset: Int) {
-            // ... (Keep your existing Total Count logic here) ...
-            let totalCount = story?.content.count ?? 0 // (Simplified for brevity, use your full logic)
+            let totalCount = story?.content.count ?? 0
             let newIndex = currentIndex + offset
 
-            // 1. Back Button Logic (Keep existing)
             if offset < 0 {
                 if newIndex < 0 {
                     navigationController?.popViewController(animated: true)
@@ -381,36 +381,24 @@ private extension ImageLabelReadingViewController {
                 return
             }
 
-            // 2. Checkpoint Logic (The Core MVC Logic)
             if let story = story {
                 let currentPage = story.content[currentIndex]
                 
-                // If this page (including the last one) has a checkpoint...
                 if currentPage.checkAfter {
-                    // ...and it's NOT done yet...
                     if !isCurrentCheckpointCompleted() {
-                        // ...Trigger the checkpoint screen immediately.
                         if navigateToCheckpoint(nextIndex: newIndex) {
-                            return // STOP here. Don't try to change pages.
+                            return
                         }
                     }
                 }
             }
-
-            // 3. End of Story Guard
-            // If we get here, it means either:
-            // A) The checkpoint is done (so button is disabled anyway via updateChevronEnabledState)
-            // B) There is NO checkpoint on the last page.
             if newIndex >= totalCount {
-                // If there was no checkpoint, mark it complete and exit.
                 if let currentStory = story {
                      StoryManager.shared.saveProgress(storyId: currentStory.id, pageIndex: currentIndex, didComplete: true)
                 }
                 popToReadingPreview()
                 return
             }
-
-            // 4. Normal Navigation
             showStoryPage(at: newIndex)
         }
     
@@ -434,28 +422,23 @@ private extension ImageLabelReadingViewController {
 // MARK: - Checkpoint Logic
 private extension ImageLabelReadingViewController {
     func navigateToCheckpoint(nextIndex: Int, forceRetake: Bool = false) -> Bool {
-            // 1. Safety check
             guard let currentStory = story else { return false }
             
             let currentPageNumber = currentStory.content[currentIndex].pageNumber
             
-            // 2. Ask Manager for the Checkpoint Item (instead of creating CheckpointsResponse)
             guard let item = StoryManager.shared.getCheckpointItem(storyId: currentStory.id, pageNumber: currentPageNumber) else {
                 return false
             }
             
-            // 3. Initialize View Controller
             guard let storyboard = self.storyboard,
                   let cpVC = storyboard.instantiateViewController(withIdentifier: "CheckpointVC") as? CheckpointViewController else {
                 return false
             }
             
-            // 4. Pass Data
             cpVC.story = currentStory
             cpVC.checkpointItem = item
             cpVC.nextPageIndex = nextIndex
             
-            // Logic for "If they fail, where do they go back to?"
             cpVC.fallbackPageIndex = firstPageAfterLastCheckpoint(currentIndex: currentIndex)
             
             cpVC.forceRetake = forceRetake
@@ -471,10 +454,8 @@ private extension ImageLabelReadingViewController {
         guard let story = story else { return false }
         let currentPage = story.content[currentIndex]
         
-        // Only check if this page actually has a checkpoint
         guard currentPage.checkAfter else { return false }
         
-        // Ask the Manager if it's done
         if let item = StoryManager.shared.getCheckpointItem(storyId: story.id, pageNumber: currentPage.pageNumber) {
             return StoryManager.shared.isCheckpointCompleted(storyId: story.id, checkpointText: item.text)
         }
@@ -493,7 +474,6 @@ private extension ImageLabelReadingViewController {
             return
         }
         
-        // Ask Manager if completed
         if let item = StoryManager.shared.getCheckpointItem(storyId: story.id, pageNumber: currentPage.pageNumber) {
             let isCompleted = StoryManager.shared.isCheckpointCompleted(storyId: story.id, checkpointText: item.text)
             retakeButton.isHidden = !isCompleted
@@ -525,10 +505,8 @@ private extension ImageLabelReadingViewController {
     }
     
     func updateChevronEnabledState() {
-            // 1. Always check Previous Button
             previousButton.isEnabled = currentIndex > 0
             
-            // 2. Get Total Count
             let totalCount: Int
             if let story = story {
                  totalCount = story.content.count
@@ -536,17 +514,13 @@ private extension ImageLabelReadingViewController {
                  totalCount = 0
             }
             
-            // 3. Smart Next Button Logic
             if currentIndex < totalCount - 1 {
-                // Not the last page -> Always enabled
                 nextButton.isEnabled = true
             } else {
-                // We ARE on the last page.
-                // Enable ONLY if the checkpoint is NOT done yet.
                 if isCurrentCheckpointCompleted() {
-                    nextButton.isEnabled = false // Logic: "After cleared, it must be disabled"
+                    nextButton.isEnabled = false
                 } else {
-                    nextButton.isEnabled = true  // Logic: "Enabled to take the checkpoint"
+                    nextButton.isEnabled = true
                 }
             }
         }
@@ -570,12 +544,24 @@ private extension ImageLabelReadingViewController {
 
 // MARK: - Syllable Interaction
 private extension ImageLabelReadingViewController {
-    @objc func handleLabelDoubleTap(_ recognizer: UITapGestureRecognizer) {
-        guard let label = recognizer.view as? UILabel else { return }
+    @objc func handleLabelLongPress(_ recognizer: UILongPressGestureRecognizer) {
+
+        guard recognizer.state == .began,
+              let label = recognizer.view as? UILabel else { return }
+
         let pointInLabel = recognizer.location(in: label)
-        guard let (word, wordRectInLabel) = wordAtPoint(in: label, point: pointInLabel) else { return }
-        let syllableText = SyllableEngine.syllabify(word)
-        showSyllablePopover(text: syllableText, from: label, wordRectInLabel: wordRectInLabel)
+
+        guard let (word, wordRectInLabel) =
+                wordAtPoint(in: label, point: pointInLabel)
+        else { return }
+
+        let syllableText = PhonemeEngine.kindleSplit(word)
+        
+        showSyllablePopover(
+            text: syllableText,
+            from: label,
+            wordRectInLabel: wordRectInLabel
+        )
     }
     
     @objc func handleOverlayTap(_ recognizer: UITapGestureRecognizer) {

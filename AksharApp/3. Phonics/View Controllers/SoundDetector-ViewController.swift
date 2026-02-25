@@ -17,7 +17,6 @@ final class SoundDetectorViewController: UIViewController,
     var coverWasShown: Bool = false
     var startingIndex: Int?
     
-    // We get the index from the Manager
     var currentIndex: Int {
         return PhonicsGameplayManager.shared.getCurrentIndex()
     }
@@ -72,14 +71,13 @@ final class SoundDetectorViewController: UIViewController,
 
     // MARK: - Initial Setup
     private func configureGameData() {
-        // 1. Load Data
-        questions = SoundQuestionLoader.loadQuestions()
+        self.questions = BundleDataLoader.shared.load("SoundQuestions", as: [SoundQuestion].self)
+        
         guard !questions.isEmpty else {
             print("No Sound Detector questions loaded")
             return
         }
 
-        // 2. Start Manager Session
         PhonicsGameplayManager.shared.startSession(
             for: .detective,
             totalQuestions: questions.count,
@@ -94,7 +92,8 @@ final class SoundDetectorViewController: UIViewController,
         submitButton.backgroundColor = UIColor(red: 117/255, green: 80/255, blue: 50/255, alpha: 1)
         submitButton.setTitleColor(.white, for: .normal)
         submitButton.titleLabel?.font = UIFont(name: "ArialRoundedMTBold", size: 35)
-
+        
+        yellowView.layer.cornerRadius = 20
         yellowView.layer.borderWidth = 4
         yellowView.layer.borderColor = UIColor(red: 0.96, green: 0.92, blue: 0.66, alpha: 1).cgColor
         yellowView.clipsToBounds = true
@@ -130,6 +129,7 @@ final class SoundDetectorViewController: UIViewController,
     }
 
     private func moveToNextQuestion() {
+        removeSticker()
         PhonicsGameplayManager.shared.advanceToNext()
         loadCurrentQuestion()
     }
@@ -169,7 +169,6 @@ final class SoundDetectorViewController: UIViewController,
             return
         }
         
-        // 1. Record Attempt
         PhonicsGameplayManager.shared.recordAttempt()
 
         guard let selected = selectedInitial else {
@@ -182,14 +181,13 @@ final class SoundDetectorViewController: UIViewController,
         let correct = questions[index].correctInitial.uppercased()
 
         if selected.uppercased() == correct {
-            // 2. Record Success
             PhonicsGameplayManager.shared.recordSuccess()
             
             optionButtons.forEach { $0.isEnabled = false }
             isAnswerLocked = true
             submitButton.setTitle("Next", for: .normal)
             showFeedback("Correct!", color: .systemGreen)
-            triggerConfetti()
+            showStickerAtTopRight(assetName: "YouDidIt", horizontalOffset: 5)
         } else {
             showFeedback("Try again!", color: .systemRed)
         }

@@ -54,4 +54,24 @@ enum ExerciseType: CaseIterable {
         case .wordBuilder: return "WordBuilderVC"
         }
     }
+    
+    var cycleKey: String {
+            switch self {
+            case .rhyme: return "rhyme_words_cycle"
+            case .detective: return "sound_detector_cycle"
+            case .quizMyStory: return "quiz_my_story_cycle"
+            case .fluency: return "fluency_cycle"
+            case .wordBuilder: return "word_builder_cycle"
+            }
+        }
+        
+    var exerciseKey: String {
+        switch self {
+        case .rhyme: return "rhyme_words"
+        case .detective: return "sound_detector"
+        case .quizMyStory: return "quiz_my_story"
+        case .fluency: return "fluency_drill"
+        case .wordBuilder: return "word_builder"
+        }
+    }
 }

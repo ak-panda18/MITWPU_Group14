@@ -16,7 +16,6 @@ class WordBuilder_ViewController: UIViewController,
     var startingIndex: Int?
     var coverWasShown: Bool = false
     
-    // We fetch the current index from the Manager
     var currentIndex: Int {
         return PhonicsGameplayManager.shared.getCurrentIndex()
     }
@@ -56,10 +55,8 @@ class WordBuilder_ViewController: UIViewController,
     
     // MARK: - Configuration
     private func configureGameData() {
-        // 1. Load Data
-        questions = WordBuilderQuestionLoader.loadQuestions()
+        self.questions = BundleDataLoader.shared.load("WordBuilderQuestions", as: [WordBuilderQuestion].self)
         
-        // 2. Start Manager Session
         PhonicsGameplayManager.shared.startSession(
             for: .wordBuilder,
             totalQuestions: questions.count,
@@ -119,11 +116,11 @@ class WordBuilder_ViewController: UIViewController,
             styleOptionButton(button)
         }
         
-        // Clear previous tiles from answer slots
         answerViews.forEach { $0.subviews.forEach { $0.removeFromSuperview() } }
     }
 
     private func moveToNextQuestion() {
+        removeSticker()
         PhonicsGameplayManager.shared.advanceToNext()
         loadCurrentQuestion()
     }
@@ -145,20 +142,19 @@ class WordBuilder_ViewController: UIViewController,
 
         guard let q = question else { return }
         
-        // 1. Record Attempt
         PhonicsGameplayManager.shared.recordAttempt()
         
         let assembled = filledTiles.compactMap { $0 }.map { shuffledTiles[$0] }.joined()
  
         if assembled.lowercased() == q.correct.lowercased() {
-            // 2. Record Success
+            
             PhonicsGameplayManager.shared.recordSuccess()
             
             feedbackLabel.text = "Correct!"
             feedbackLabel.textColor = .systemGreen
             submitButton.setTitle("Next", for: .normal)
             isAnswerLocked = true
-            triggerConfetti()
+            showStickerAtTopRight(assetName: "YouDidIt")
         } else {
             feedbackLabel.text = "Try again!"
             feedbackLabel.textColor = .systemRed

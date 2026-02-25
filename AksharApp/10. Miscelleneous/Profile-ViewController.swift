@@ -8,13 +8,9 @@
 import UIKit
 
 // MARK: - Profile View Controller
-/// Main profile screen that displays user information, streaks, reminders, and parental controls
 class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPINDelegate {
     
-    // MARK: - IBOutlets
-    
     // MARK: Background Card Views
-    /// Container views for different sections with card styling
     @IBOutlet weak var streakCard: UIView!
     @IBOutlet weak var privacyCard: UIView!
     @IBOutlet weak var personalInfoBackground: UIView!
@@ -22,7 +18,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     @IBOutlet weak var ParentalControlCard: UIView!
     
     // MARK: Streak Views
-    /// Individual day streak indicators (7 days of the week)
     @IBOutlet weak var mondayStreak: UIView!
     @IBOutlet weak var tuesdayStreak: UIView!
     @IBOutlet weak var wednesdayStreak: UIView!
@@ -32,30 +27,24 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     @IBOutlet weak var sundayStreak: UIView!
     
     // MARK: Streak Information
-    /// Displays the current streak count
     @IBOutlet weak var streakNumber: UILabel!
     
     // MARK: Navigation Buttons
-    /// Button to navigate to analytics screen
     @IBOutlet weak var analyticsButton: UIButton!
     
     // MARK: Profile Header
-    /// User's profile picture and name displayed at the top
     @IBOutlet weak var profileImage: UIImageView!
     @IBOutlet weak var profileName: UILabel!
     
     // MARK: Personal Information
-    /// Labels displaying user's personal details
     @IBOutlet weak var firstName: UILabel!
     @IBOutlet weak var lastName: UILabel!
     @IBOutlet weak var gender: UILabel!
     @IBOutlet weak var age: UILabel!
     
-    /// Button to edit personal information
     @IBOutlet weak var editProfileButton: UIButton!
     
     // MARK: Reminder Controls
-    /// Individual day reminder toggle buttons (7 days of the week)
     @IBOutlet weak var mondayReminder: UIButton!
     @IBOutlet weak var tuesdayReminder: UIButton!
     @IBOutlet weak var wednesdayReminder: UIButton!
@@ -64,31 +53,23 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     @IBOutlet weak var saturdayReminder: UIButton!
     @IBOutlet weak var sundayReminder: UIButton!
     
-    /// Master switch to enable/disable all reminders
     @IBOutlet weak var reminderSwitch: UISwitch!
     
     // MARK: Parental Controls
-    /// Button to set or change parental control PIN
     @IBOutlet weak var setPinButton: UIButton!
     
-    /// Button to request PIN reset via email
     @IBOutlet weak var forgotPINButton: UIButton!
     
     // MARK: Account Management
-    /// Buttons for account actions
     @IBOutlet weak var deleteAccountButton: UIButton!
     @IBOutlet weak var logOutButton: UIButton!
     
-    // MARK: - Properties
     
     // MARK: Reminder State Management
-    /// Color for selected reminder days
     let yellowReminderColor = UIColor(red: 255/255, green: 231/255, blue: 131/255, alpha: 1.0)
     
-    /// Color for unselected reminder days
     let whiteReminderColor = UIColor.white
     
-    /// Dictionary tracking which reminder days are enabled
     var reminderDays: [UIButton: Bool] = [:]
     
     // MARK: - Lifecycle Methods
@@ -96,13 +77,11 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // TEMPORARY: Uncomment this line to reset PIN for testing
         UserDefaults.standard.removeObject(forKey: "userPIN")
         
         setupStreakViews()
         applyCardStyleToBackgrounds()
         
-        // Initial setup for streaks
         let attendanceData: [UIView: Bool?] = [
             mondayStreak: true, tuesdayStreak: false, wednesdayStreak: true,
             thursdayStreak: true, fridayStreak: false, saturdayStreak: nil, sundayStreak: nil
@@ -115,20 +94,16 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     }
     
     // MARK: - UI Setup Methods
-    
-    /// Applies card styling (shadow, border) to all background container views
     func applyCardStyleToBackgrounds() {
         let backgroundViews = [streakCard, privacyCard, personalInfoBackground, remindersCard, ParentalControlCard].compactMap { $0 }
         
         for backgroundView in backgroundViews {
-            // SHADOW
             backgroundView.layer.shadowColor = UIColor.black.cgColor
             backgroundView.layer.shadowOpacity = 0.1
             backgroundView.layer.shadowOffset = CGSize(width: 0, height: 1)
             backgroundView.layer.shadowRadius = 4
             backgroundView.layer.masksToBounds = false
-            
-            // STROKE/BORDER
+
             backgroundView.layer.borderColor = UIColor.black.withAlphaComponent(0.1).cgColor
             backgroundView.layer.borderWidth = 1.0
             
@@ -138,8 +113,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     }
     
     // MARK: - Streak Management
-    
-    /// Configures the visual appearance of all streak day views (rounded corners, borders)
     func setupStreakViews() {
         let allStreaks = [mondayStreak, tuesdayStreak, wednesdayStreak, thursdayStreak, fridayStreak, saturdayStreak, sundayStreak].compactMap { $0 }
         
@@ -150,10 +123,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
         }
     }
     
-    /// Styles an individual streak view based on attendance status
-    /// - Parameters:
-    ///   - view: The streak view to style
-    ///   - attended: true = attended (green), false = skipped (red border), nil =未来 (gray)
     func styleStreakView(view: UIView, attended: Bool?) {
         guard let dayLabel = view.subviews.first(where: { $0 is UILabel }) as? UILabel else { return }
         
@@ -178,8 +147,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
         }
     }
     
-    /// Applies attendance status styling to multiple streak views at once
-    /// - Parameter data: Dictionary mapping views to their attendance status
     func applyStreakStatus(data: [UIView: Bool?]) {
         for (view, attended) in data {
             styleStreakView(view: view, attended: attended)
@@ -187,8 +154,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     }
     
     // MARK: - Reminder Management
-    
-    /// Sets up the initial appearance and state of all reminder day buttons
     func setupReminderButtons() {
         let reminderButtons = [mondayReminder, tuesdayReminder, wednesdayReminder, thursdayReminder, fridayReminder, saturdayReminder, sundayReminder].compactMap { $0 }
         
@@ -202,8 +167,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
         }
     }
     
-    /// Enables or disables all reminder day buttons based on master switch state
-    /// - Parameter isEnabled: Whether reminders should be enabled
     func updateReminderButtonState(isEnabled: Bool) {
         let reminderButtons = [mondayReminder, tuesdayReminder, wednesdayReminder, thursdayReminder, fridayReminder, saturdayReminder, sundayReminder].compactMap { $0 }
         
@@ -213,12 +176,7 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
         }
     }
     
-    // MARK: - IBActions
-    
     // MARK: Reminder Actions
-    
-    /// Toggles a specific reminder day on/off when tapped
-    /// - Parameter sender: The reminder day button that was tapped
     @IBAction func toggleReminderDay(_ sender: UIButton) {
         let currentState = reminderDays[sender] ?? true
         let newState = !currentState
@@ -234,29 +192,19 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
         reminderDays[sender] = newState
     }
     
-    /// Master switch toggled - enables/disables all reminder day buttons
-    /// - Parameter sender: The reminder master switch
     @IBAction func reminderSwitchToggled(_ sender: UISwitch) {
         updateReminderButtonState(isEnabled: sender.isOn)
     }
     
     // MARK: Parental Control Actions
-    
-    /// Handles Set/Change PIN button tap - routes to appropriate screen based on PIN existence
-    /// - Parameter sender: The Set PIN button
     @IBAction func setPinButtonTapped(_ sender: UIButton) {
-        // Check if PIN already exists
         if UserDefaults.standard.string(forKey: "userPIN") != nil {
-            // PIN exists, go to verify screen first
             performSegue(withIdentifier: "showVerifyPIN", sender: self)
         } else {
-            // No PIN exists, go directly to set PIN screen
             performSegue(withIdentifier: "showSetPIN", sender: self)
         }
     }
     
-    /// Handles Forgot PIN button tap - shows alert about reset email
-    /// - Parameter sender: The Forgot PIN button
     @IBAction func forgotPINButtonTapped(_ sender: UIButton) {
         
         let alert = UIAlertController(
@@ -271,8 +219,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     }
     
     // MARK: - PIN Management
-    
-    /// Checks if a PIN exists in UserDefaults and updates button text accordingly
     func checkPINStatus() {
         if UserDefaults.standard.string(forKey: "userPIN") != nil {
             setPinButton.setTitle("Change PIN", for: .normal)
@@ -282,11 +228,6 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
     }
     
     // MARK: - Navigation
-    
-    /// Prepares for segues to edit profile, set PIN, or verify PIN screens
-    /// - Parameters:
-    ///   - segue: The segue being performed
-    ///   - sender: The object that triggered the segue
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         print("Prepare for segue called")
         print("Segue identifier: \(segue.identifier ?? "no identifier")")
@@ -317,31 +258,18 @@ class Profile_ViewController: UIViewController, EditPersonalInfoDelegate, SetPIN
             }
         } else if segue.identifier == "showVerifyPIN" {
             print("Verify PIN segue matched")
-            // VerifyPIN will handle navigation to SetPIN
         } else {
             print("Segue identifier did not match")
         }
     }
     
-    // MARK: - Delegate Methods
-    
     // MARK: SetPINDelegate
-    
-    /// Called when a PIN is successfully set or changed
-    /// - Parameter pin: The PIN that was saved
     func didSetPIN(_ pin: String) {
         print("PIN saved successfully: \(pin)")
         checkPINStatus()
     }
     
     // MARK: EditPersonalInfoDelegate
-    
-    /// Called when personal information is updated from the edit screen
-    /// - Parameters:
-    ///   - firstName: Updated first name
-    ///   - lastName: Updated last name
-    ///   - age: Updated age
-    ///   - gender: Updated gender
     func didUpdatePersonalInfo(firstName: String, lastName: String, age: String, gender: String) {
         print("Delegate method called!")
         print("Updating with - First: \(firstName), Last: \(lastName), Age: \(age), Gender: \(gender)")

@@ -51,7 +51,6 @@ class FluencyDrillsViewController: UIViewController,
     override func viewDidLoad() {
         super.viewDidLoad()
         styleUI()
-        self.items = FluencyWordsLoader.loadWords()
         requestPermissions()
         configureGameData()
         styleSubmitButton()
@@ -65,30 +64,25 @@ class FluencyDrillsViewController: UIViewController,
 
     // MARK: - Configuration
     private func configureGameData() {
-        // 1. Load Words
-        items = FluencyWordsLoader.loadWords()
-        
-        if items.isEmpty {
-            items = [
-                FluencyItem(speakableText: "Cat"),
-                FluencyItem(speakableText: "Dog"),
-                FluencyItem(speakableText: "Hat")
-            ]
+            items = BundleDataLoader.shared.load("FluencyDrillsQuestions", as: [FluencyItem].self)
+            
+            if items.isEmpty {
+                items = [
+                    FluencyItem(speakableText: "Cat"),
+                    FluencyItem(speakableText: "Dog"),
+                    FluencyItem(speakableText: "Hat")
+                ]
+            }
+            
+            items.shuffle()
+            localCurrentIndex = 0
+            PhonicsGameplayManager.shared.startSession(
+                for: .fluency,
+                totalQuestions: items.count,
+                startPointer: 0
+            )
+            loadWord()
         }
-        
-        items.shuffle()
-        localCurrentIndex = 0
-
-        // 2. Start Manager Session
-        // Note: Fluency is slightly different (timed), but we still track the session start/end
-        PhonicsGameplayManager.shared.startSession(
-            for: .fluency,
-            totalQuestions: items.count,
-            startPointer: 0
-        )
-
-        loadWord()
-    }
 
     // MARK: - UI Styling
     func styleUI() {
@@ -115,7 +109,6 @@ class FluencyDrillsViewController: UIViewController,
 
     // MARK: - Word Flow
     func loadWord() {
-        // Wrap around if we run out of words
         if localCurrentIndex >= items.count {
             localCurrentIndex = 0
             items.shuffle()
@@ -182,7 +175,6 @@ class FluencyDrillsViewController: UIViewController,
     }
 
     @IBAction func nextButtonTapped(_ sender: Any) {
-        // Start a fresh round
         localCorrectCount = 0
         localCurrentIndex = 0
         items.shuffle()
@@ -228,16 +220,12 @@ class FluencyDrillsViewController: UIViewController,
                 
                 self.didScoreCurrentWord = true
                 
-                // 1. Update Local Stats
                 self.localCorrectCount += 1
                 self.localCurrentIndex += 1
                 
-                // 2. Report to Manager (for Analytics)
                 PhonicsGameplayManager.shared.recordSuccess()
                 PhonicsGameplayManager.shared.recordAttempt()
                 
-                // 3. Next Word
-                // IMPORTANT: Wrap UI updates in main thread to prevent crashes
                 DispatchQueue.main.async {
                     self.loadWord()
                 }
@@ -271,7 +259,6 @@ class FluencyDrillsViewController: UIViewController,
         timer?.invalidate()
         audioEngine.stop()
         
-        // Show local score for this specific 30-second run
         scoreLabel.text = "You pronounced \(localCorrectCount) words correctly!"
         scoreLabel.textColor = .systemGreen
         scoreLabel.isHidden = false
@@ -282,7 +269,6 @@ class FluencyDrillsViewController: UIViewController,
 
     // MARK: - Navigation
     @IBAction func backButtonTapped(_ sender: Any) {
-        // Manager saves the session data
         PhonicsGameplayManager.shared.endSession()
         goBackToPhonicsCover()
     }
@@ -294,39 +280,3 @@ class FluencyDrillsViewController: UIViewController,
     }
 }
 
-// MARK: - String Similarity Helper
-//extension String {
-//    func similar(to other: String) -> Bool {
-//        let a = lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-//        let b = other.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-//
-//        if a.contains(b) || b.contains(a) { return true }
-//
-//        let distance = levenshtein(a, b)
-//        let maxLen = max(a.count, b.count)
-//        let similarity = 1.0 - (Double(distance) / Double(maxLen))
-//
-//        return similarity > 0.65
-//    }
-//
-//    private func levenshtein(_ s1: String, _ s2: String) -> Int {
-//        let a = Array(s1)
-//        let b = Array(s2)
-//
-//        if a.isEmpty { return b.count }
-//        if b.isEmpty { return a.count }
-//
-//        var dist = Array(repeating: Array(repeating: 0, count: b.count + 1), count: a.count + 1)
-//
-//        for i in 0...a.count { dist[i][0] = i }
-//        for j in 0...b.count { dist[0][j] = j }
-//
-//        for i in 1...a.count {
-//            for j in 1...b.count {
-//                let cost = a[i - 1] == b[j - 1] ? 0 : 1
-//                dist[i][j] = Swift.min(dist[i - 1][j] + 1, dist[i][j - 1] + 1, dist[i - 1][j - 1] + cost)
-//            }
-//        }
-//        return dist[a.count][b.count]
-//    }
-//}

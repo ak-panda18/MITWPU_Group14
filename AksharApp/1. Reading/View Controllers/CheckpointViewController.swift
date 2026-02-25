@@ -41,26 +41,18 @@ class CheckpointViewController: UIViewController {
     private var isPaused = false
 
     private var checkpointStorageKey: String {
-            let storyID = story?.title.replacingOccurrences(of: " ", with: "") ?? "UnknownStory"
-            let cleanText = checkpointItem.text
-                .components(separatedBy: CharacterSet.alphanumerics.inverted)
-                .joined()
-            let checkpointID = String(cleanText.prefix(50))
-            
-            return "CheckpointCompleted_\(storyID)_\(checkpointID)"
-        }
+        let storyID = story?.title.replacingOccurrences(of: " ", with: "") ?? "UnknownStory"
+        let cleanText = checkpointItem.text
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined()
+        let checkpointID = String(cleanText.prefix(50))
+        
+        return "CheckpointCompleted_\(storyID)_\(checkpointID)"
+    }
+    
     private var attemptsStorageKey: String {
-            return "\(checkpointStorageKey)_AttemptsList"
-        }
-//    private let ignorableWords: Set<String> = [
-//            "a", "an", "the",
-//            "and", "but", "or", "so", "if", "because",
-//            "to", "of", "in", "on", "at", "by", "for", "from", "with", "up", "out",
-//            "it", "he", "she", "they", "we", "i", "you", "me", "my", "this", "that",
-//            "is", "am", "are", "was", "were", "be", "been",
-//            "has", "have", "had", "do", "does", "did",
-//            "can", "will", "would", "could", "should"
-//        ]
+        return "\(checkpointStorageKey)_AttemptsList"
+    }
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -114,12 +106,16 @@ class CheckpointViewController: UIViewController {
     @IBAction func micTapped(_ sender: UIButton) {
         if hasPerfectScore {
             goToNextStoryPage()
+            return
+        }
+
+        if audioEngine.isRunning {
+            startGracefulStop()
+            playVideoAgain()
+
         } else {
-            if audioEngine.isRunning {
-                startGracefulStop()
-            } else {
-                startListening()
-            }
+            stopAndResetVideo()
+            startListening()
         }
     }
 
@@ -172,6 +168,16 @@ private extension CheckpointViewController {
             name: .AVPlayerItemDidPlayToEndTime,
             object: player?.currentItem
         )
+    }
+    
+    func stopAndResetVideo() {
+        player?.pause()
+        player?.seek(to: .zero)
+    }
+    
+    func playVideoAgain() {
+        player?.seek(to: .zero)
+        player?.play()
     }
     
     @objc func loopVideo() {
@@ -229,10 +235,8 @@ private extension CheckpointViewController {
             micButton.setImage(UIImage(systemName: "arrow.right.circle.fill"), for: .normal)
             micButton.tintColor = .systemGreen
             
-            // FIX: Use the new API we created in StringSimilarity.swift
             let allWordsInText = checkpointItem.text.gradableWords
             
-            // We pretend the user said everything perfectly to color it all green
             let attributed = checkpointItem.text.colored(
                 matching: allWordsInText,
                 font: checkpointLabel.font ?? UIFont.systemFont(ofSize: 30)
@@ -341,244 +345,91 @@ private extension CheckpointViewController {
 
 // MARK: - Evaluation & Scoring
 private extension CheckpointViewController {
-    func preprocessSpokenText(_ text: String) -> String {
-            var processed = text.lowercased()
-            let replacements = [
-                "i have": "i've",
-                "we have": "we've",
-                "you have": "you've",
-                "they have": "they've",
-                "do not": "don't",
-                "did not": "didn't",
-                "can not": "can't",
-                "cannot": "can't",
-                "will not": "won't",
-                "is not": "isn't",
-                "it is": "it's",
-                "that is": "that's",
-                "what is": "what's",
-                "where is": "where's"
-            ]
-            for (pattern, template) in replacements {
-                processed = processed.replacingOccurrences(of: pattern, with: template)
-            }
-            return processed
-        }
- 
+    
     func evaluateSpokenText(_ spokenText: String) {
-            stopTimer?.invalidate()
-            stopTimer = nil
-            
-            // 1. Use the new helper for cleaning
-            let normalizedSpoken = spokenText.allWords.joined(separator: " ") // simple clean
-            let cleanText = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            guard !cleanText.isEmpty else {
-                micButton.setImage(UIImage(systemName: "microphone.fill"), for: .normal)
-                micButton.isEnabled = true
-                return
+        stopTimer?.invalidate()
+        stopTimer = nil
+        
+        let normalizedSpoken = spokenText.allWords.joined(separator: " ") // simple clean
+        let cleanText = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !cleanText.isEmpty else {
+            micButton.setImage(UIImage(systemName: "microphone.fill"), for: .normal)
+            micButton.isEnabled = true
+            return
+        }
+        
+        guard let referenceText = checkpointItem?.text else { return }
+        
+        let targetWords = referenceText.gradableWords
+        let spokenWords = normalizedSpoken.allWords
+        
+        guard spokenWords.count >= 1 else { return }
+        
+        let attributed = referenceText.colored(matching: spokenWords, font: checkpointLabel.font)
+        checkpointLabel.attributedText = attributed
+        
+        var correctCount = 0
+        attributed.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: attributed.length)) { value, range, _ in
+            if let color = value as? UIColor, color == .systemGreen {
+                let fragment = (attributed.string as NSString).substring(with: range)
+                correctCount += fragment.gradableWords.count
             }
-
-            guard let referenceText = checkpointItem?.text else { return }
+        }
+        
+        let total = max(targetWords.count, 1)
+        let rawAccuracy = Double(correctCount) / Double(total)
+        let accuracy = min(rawAccuracy, 1.0)
+        let percent = Int(accuracy * 100)
+        
+        saveAttempt(accuracy: percent, spokenWords: spokenWords)
+        saveCheckpointAccuracy(accuracy)
+        
+        let passThreshold: Double = 0.80
+        
+        if accuracy >= passThreshold {
+            hasPerfectScore = true
+            attemptCount = 0
+            saveCheckpointCompletion()
+            micButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
+            micButton.tintColor = .systemGreen
             
-            // 2. Use the new Helpers from StringSimilarity.swift
-            let targetWords = referenceText.gradableWords
-            let spokenWords = normalizedSpoken.allWords
-            
-            guard spokenWords.count >= 1 else { return }
-
-            // 3. Update UI using the new .colored() method
-            // Pass the CURRENT font so it doesn't break your design
-            let attributed = referenceText.colored(matching: spokenWords, font: checkpointLabel.font)
-            checkpointLabel.attributedText = attributed
-            
-            // 4. Calculate Score (Move counting logic inline or to helper)
-            var correctCount = 0
-            attributed.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: attributed.length)) { value, range, _ in
-                if let color = value as? UIColor, color == .systemGreen {
-                    let fragment = (attributed.string as NSString).substring(with: range)
-                    // Use the helper to count only valid gradable words in the green chunk
-                    correctCount += fragment.gradableWords.count
-                }
+            if isLastCheckpoint() {
+                showStoryCompletionAlert()
+            } else {
+                showCheckpointSuccessAlert()
             }
+        } else {
+            attemptCount += 1
+            updateInstructionText()
+            micButton.setImage(UIImage(systemName: "arrow.trianglehead.clockwise"), for: .normal)
+            micButton.isEnabled = true
             
-            let total = max(targetWords.count, 1)
-            let rawAccuracy = Double(correctCount) / Double(total)
-            let accuracy = min(rawAccuracy, 1.0)
-            let percent = Int(accuracy * 100)
-            
-            saveAttempt(accuracy: percent, spokenWords: spokenWords)
-            saveCheckpointAccuracy(accuracy)
-            
-            // ... (Rest of your completion logic is fine) ...
-            let passThreshold: Double = 0.80
-            
-            if accuracy >= passThreshold {
-                // ... Success logic ...
-                hasPerfectScore = true
-                attemptCount = 0
-                saveCheckpointCompletion()
-                micButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
-                micButton.tintColor = .systemGreen
-
-                if isLastCheckpoint() {
-                    showStoryCompletionAlert()
-                } else {
-                    showCheckpointSuccessAlert()
+            if attemptCount >= maxAttempts {
+                presentCustomAlert(
+                    title: "Let's practice",
+                    message: "Let's practice some more and try again!",
+                    buttonText: "Continue",
+                    image: UIImage(named: "mascot_encouraging")
+                ) { [weak self] in
+                    self?.goToFallbackPage()
                 }
             } else {
-                // ... Failure logic ...
-                attemptCount += 1
-                updateInstructionText()
-                micButton.setImage(UIImage(systemName: "arrow.trianglehead.clockwise"), for: .normal)
-                micButton.isEnabled = true
-                
-                 // ... Your existing alert logic ...
-                if attemptCount >= maxAttempts {
-                    // ...
-                     presentCustomAlert(
-                        title: "Let's practice",
-                        message: "Let's practice some more and try again!",
-                        buttonText: "Continue",
-                        image: UIImage(named: "mascot_encouraging")
-                    ) { [weak self] in
-                        self?.goToFallbackPage()
-                    }
-                } else {
-                    let remaining = maxAttempts - attemptCount
-                     presentCustomAlert(
-                        title: "Keep Going!",
-                        message: "You read \(percent)% correctly.\nYou have \(remaining) more tries.",
-                        buttonText: "Try Again",
-                        image: UIImage(named: "mascot_encouraging")
-                    ) { }
-                }
+                let remaining = maxAttempts - attemptCount
+                presentCustomAlert(
+                    title: "Keep Going!",
+                    message: "You read \(percent)% correctly.\nYou have \(remaining) more tries.",
+                    buttonText: "Try Again",
+                    image: UIImage(named: "mascot_encouraging")
+                ) { }
             }
         }
-    
-//    func getGradableWords(from text: String) -> [String] {
-//            let clean = text
-//                .lowercased()
-//                .replacingOccurrences(of: "[^a-z\\s]", with: "", options: .regularExpression)
-//
-//            return clean
-//                .components(separatedBy: .whitespaces)
-//                .filter { !$0.isEmpty && !ignorableWords.contains($0) }
-//        }
-//
-//        
-//        func getAllWords(from text: String) -> [String] {
-//            let clean = text
-//                .lowercased()
-//                .replacingOccurrences(of: "[^a-z\\s]", with: "", options: .regularExpression)
-//
-//            return clean
-//                .components(separatedBy: .whitespaces)
-//                .filter { !$0.isEmpty } 
-//        }
-//    
-//    func normalizedWords(from text: String) -> [String] {
-//        let clean = text
-//            .lowercased()
-//            .replacingOccurrences(of: "[^a-z\\s]", with: "", options: .regularExpression)
-//
-//        return clean
-//            .components(separatedBy: .whitespaces)
-//            .filter { !$0.isEmpty && !ignorableWords.contains($0) }
-//    }
-    
-    
-//    func colorCheckpointText(usingSpokenWords spokenWords: [String]) -> Int {
-//        guard let text = checkpointItem?.text else { return 0 }
-//        
-//        // 1. Generate Colored Text
-//        let attributed = text.colored(matching: spokenWords, font: checkpointLabel.font)
-//        checkpointLabel.attributedText = attributed
-//        
-//        // 2. Count Correct Words (Green)
-//        var correctCount = 0
-//        attributed.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: attributed.length)) { value, range, _ in
-//            if let color = value as? UIColor, color == .systemGreen {
-//                let fragment = (attributed.string as NSString).substring(with: range)
-//                let words = fragment.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
-//                // Count valid words in this green chunk
-//                let validWords = words.filter { !ignorableWords.contains($0.lowercased()) }
-//                correctCount += validWords.count
-//            }
-//        }
-//        return correctCount
-//    }
-    
-//    func isRelaxedMatch(spoken: String, target: String) -> Bool {
-//            let s = spoken.lowercased()
-//            let t = target.lowercased()
-//
-//            if s == t { return true }
-//            if (s.first == "w" && t.first == "v") || (s.first == "v" && t.first == "w") {
-//                let sDrop = s.dropFirst()
-//                let tDrop = t.dropFirst()
-//                if sDrop == tDrop { return true }
-//                if levenshteinDistance(String(sDrop), String(tDrop)) <= 1 { return true }
-//            }
-//
-//            if s.hasPrefix(t) || t.hasPrefix(s) {
-//                return true
-//            }
-//
-//            let distance = levenshteinDistance(s, t)
-//            let maxLen = max(s.count, t.count)
-//            guard maxLen > 0 else { return false }
-//            if t.hasPrefix("wh") {
-//                if s.hasPrefix("w") || s.hasPrefix("v") {
-//                    if distance <= 2 { return true }
-//                }
-//            }
-//
-//            let similarity = 1.0 - Double(distance) / Double(maxLen)
-//            if t.starts(with: "w") {
-//                if maxLen <= 4 && distance <= 1 { return true }
-//            }
-//            
-//            switch maxLen {
-//            case 1...3:
-//                return similarity >= 0.7
-//            case 4...6:
-//                return similarity >= 0.65
-//            default:
-//                return similarity >= 0.6
-//            }
-//        }
-//    
-//    func levenshteinDistance(_ a: String, _ b: String) -> Int {
-//        let aChars = Array(a)
-//        let bChars = Array(b)
-//        let lenA = aChars.count
-//        let lenB = bChars.count
-//
-//        if lenA == 0 { return lenB }
-//        if lenB == 0 { return lenA }
-//
-//        var dp = Array(repeating: Array(repeating: 0, count: lenB + 1), count: lenA + 1)
-//        for i in 0...lenA { dp[i][0] = i }
-//        for j in 0...lenB { dp[0][j] = j }
-//
-//        for i in 1...lenA {
-//            for j in 1...lenB {
-//                if aChars[i - 1] == bChars[j - 1] {
-//                    dp[i][j] = dp[i - 1][j - 1]
-//                } else {
-//                    dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1)
-//                }
-//            }
-//        }
-//        return dp[lenA][lenB]
-//    }
+    }
 }
 
 // MARK: - Checkpoint Persistence
 private extension CheckpointViewController {
-    
-    // 1. UPDATED: Ask StoryManager if this is done
+
     func isCheckpointCompleted() -> Bool {
         return StoryManager.shared.isCheckpointCompleted(
             storyId: story.id,
@@ -586,7 +437,6 @@ private extension CheckpointViewController {
         )
     }
     
-    // 2. UPDATED: Tell StoryManager we finished it
     func saveCheckpointCompletion() {
         StoryManager.shared.markCheckpointCompleted(
             storyId: story.id,
@@ -603,26 +453,15 @@ private extension CheckpointViewController {
                 timestamp: Date()
             )
             
-            // 1. Save to Core Data (Single Source of Truth)
             CheckpointHistoryManager.shared.save(attempt: newAttempt)
 
-            // 2. Update UI
             updatePreviousScoresButtonState()
         }
-    
-//    func loadAttempts() -> [CheckpointAttempt] {
-//        if let data = UserDefaults.standard.data(forKey: attemptsStorageKey),
-//           let attempts = try? JSONDecoder().decode([CheckpointAttempt].self, from: data) {
-//            return attempts
-//        }
-//        return []
-//    }
     
     func updatePreviousScoresButtonState() {
         let title = story?.title ?? ""
         let number = fallbackPageIndex + 1
         
-        // Ask the Manager: Do we have history for this specific checkpoint?
         let history = CheckpointHistoryManager.shared.getAttempts(for: title, checkpointNumber: number)
         
         let hasPreviousScores = !history.isEmpty
@@ -643,7 +482,7 @@ private extension CheckpointViewController {
         )
 
         AnalyticsStore.shared.appendCheckpointResult(result)
-        print("📊 Checkpoint accuracy saved:", result.accuracy)
+        print("Checkpoint accuracy saved:", result.accuracy)
     }
     
     func endReadingSessionIfNeeded() {
@@ -655,7 +494,7 @@ private extension CheckpointViewController {
             endTime: endTime
         )
         readingSession?.endTime = endTime
-        print("📕 Reading session ended/updated")
+        print("Reading session ended/updated")
     }
 }
 
@@ -778,7 +617,7 @@ private extension CheckpointViewController {
     
     func showCheckpointSuccessAlert() {
         presentCustomAlert(
-            title: "Well done 🌟",
+            title: "Well done!",
             message: "You read that perfectly!",
             buttonText: "Continue",
             image: UIImage(named: "success_mascot")
@@ -789,15 +628,13 @@ private extension CheckpointViewController {
     
     func showStoryCompletionAlert() {
             presentCustomAlert(
-                title: "Hooray! 🎉",
+                title: "Hooray! ",
                 message: "You finished the story!",
                 buttonText: "Go to Library",
                 image: UIImage(named: "mascot_celebrating")
             ) { [weak self] in
-                // --- MVC: Controller asks Manager to update Model ---
                 
                 if let currentStory = self?.story {
-                    // Mark as 100% complete only when they click this button
                     StoryManager.shared.saveProgress(
                         storyId: currentStory.id,
                         pageIndex: (currentStory.content.count - 1),
