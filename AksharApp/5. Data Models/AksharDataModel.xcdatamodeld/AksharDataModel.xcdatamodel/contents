@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25C56" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="CheckpointAttemptEntity" representedClassName="CheckpointAttemptEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="accuracy" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="checkpointNumber" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="storyTitle" optional="YES" attributeType="String"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="readingSession" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ReadingSessionEntity" inverseName="attempts" inverseEntity="ReadingSessionEntity"/>
+        <relationship name="words" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SpokenWordEntity" inverseName="attempt" inverseEntity="SpokenWordEntity"/>
+    </entity>
+    <entity name="CheckpointCompletionEntity" representedClassName="CheckpointCompletionEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="checkpointId" optional="YES" attributeType="String"/>
+        <relationship name="story" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StoryEntity" inverseName="completions" inverseEntity="StoryEntity"/>
+    </entity>
+    <entity name="CheckpointResultEntity" representedClassName="CheckpointResultEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="accuracy" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="checkpointText" optional="YES" attributeType="String"/>
+        <attribute name="childId" optional="YES" attributeType="String"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="storyId" optional="YES" attributeType="String"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChildEntity" inverseName="checkpointResults" inverseEntity="ChildEntity"/>
+        <relationship name="story" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StoryEntity" inverseName="checkpointResults" inverseEntity="StoryEntity"/>
+    </entity>
+    <entity name="ChildEntity" representedClassName="ChildEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="age" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="firebaseUID" optional="YES" attributeType="String"/>
+        <attribute name="firstName" optional="YES" attributeType="String"/>
+        <attribute name="gender" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastName" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="profileImageData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <relationship name="checkpointResults" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CheckpointResultEntity" inverseName="child" inverseEntity="CheckpointResultEntity"/>
+        <relationship name="phonicsSessions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PhonicsSessionEntity" inverseName="child" inverseEntity="PhonicsSessionEntity"/>
+        <relationship name="readingSessions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReadingSessionEntity" inverseName="child" inverseEntity="ReadingSessionEntity"/>
+        <relationship name="writingSessions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="WritingSessionEntity" inverseName="child" inverseEntity="WritingSessionEntity"/>
+    </entity>
+    <entity name="PhonicsSessionEntity" representedClassName="PhonicsSessionEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="correctCount" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="endTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="exerciseType" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="startTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="totalAttempts" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChildEntity" inverseName="phonicsSessions" inverseEntity="ChildEntity"/>
+    </entity>
+    <entity name="ReadingSessionEntity" representedClassName="ReadingSessionEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="endTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="levelUnlocked" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="startTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="totalDuration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="attempts" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CheckpointAttemptEntity" inverseName="readingSession" inverseEntity="CheckpointAttemptEntity"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChildEntity" inverseName="readingSessions" inverseEntity="ChildEntity"/>
+        <relationship name="story" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="StoryEntity" inverseName="readingSessions" inverseEntity="StoryEntity"/>
+    </entity>
+    <entity name="SpokenWordEntity" representedClassName="SpokenWordEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="word" optional="YES" attributeType="String"/>
+        <relationship name="attempt" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CheckpointAttemptEntity" inverseName="words" inverseEntity="CheckpointAttemptEntity"/>
+    </entity>
+    <entity name="StoryEntity" representedClassName="StoryEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="isCompleted" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="lastPageIndex" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="lastReadDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="storyId" optional="YES" attributeType="String"/>
+        <relationship name="checkpointResults" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CheckpointResultEntity" inverseName="story" inverseEntity="CheckpointResultEntity"/>
+        <relationship name="completions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CheckpointCompletionEntity" inverseName="story" inverseEntity="CheckpointCompletionEntity"/>
+        <relationship name="readingSessions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReadingSessionEntity" inverseName="story" inverseEntity="ReadingSessionEntity"/>
+    </entity>
+    <entity name="WritingProgressEntity" representedClassName="WritingProgressEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="childId" optional="YES" attributeType="String"/>
+        <attribute name="lastActiveCategory" optional="YES" attributeType="String"/>
+        <attribute name="mistakeCountsData" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="unlockedIndicesData" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="WritingSessionEntity" representedClassName="WritingSessionEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lettersAccuracy" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="numbersAccuracy" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="wordsAccuracy" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChildEntity" inverseName="writingSessions" inverseEntity="ChildEntity"/>
+    </entity>
+</model>

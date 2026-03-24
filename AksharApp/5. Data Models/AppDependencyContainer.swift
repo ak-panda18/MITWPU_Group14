@@ -1,0 +1,148 @@
+import Foundation
+
+final class AppDependencyContainer {
+
+    // MARK: - Speech
+    let speechManager: SpeechManager
+    let speechRecognitionManager: SpeechRecognitionManager
+
+    // MARK: - Timer
+    let gameTimerManager: GameTimerManager
+
+    // MARK: - Core
+    let coreDataStack: CoreDataStack
+
+    // MARK: - Utilities
+    let bundleDataLoader: BundleDataLoader
+
+    // MARK: - Child
+    let childManager: ChildManager
+
+    // MARK: - Analytics
+    let analyticsStore: AnalyticsStore
+
+    // MARK: - Reading sub-stores
+    let storyRepository:     StoryRepository
+    let readingProgressStore: ReadingProgressStore
+
+    // MARK: - Reading facade
+    let storyManager:             StoryManager
+    let checkpointHistoryManager: CheckpointHistoryManager
+
+    // MARK: - Writing sub-stores
+    let writingProgressStore:  WritingProgressStore
+    let writingDrawingStore:   WritingDrawingStore
+    let writingSessionManager: WritingSessionManager
+
+    // MARK: - Writing facade
+    let writingGameplayManager: WritingGameplayManager
+
+    // MARK: - Phonics
+    let phonicsGameplayManager: PhonicsGameplayManager
+    let phonicsFlowManager:     PhonicsFlowManager
+
+    // MARK: - OCR
+    let ocrManager: OCRManager
+
+    // MARK: - Profile
+    let profileStore: ProfileStore
+
+    // MARK: - Init
+    init() {
+        coreDataStack    = CoreDataStack()
+        bundleDataLoader = BundleDataLoader.shared
+
+        childManager = ChildManager(coreDataStack: coreDataStack)
+
+        analyticsStore = AnalyticsStore(coreDataStack: coreDataStack,
+                                        childManager: childManager)
+
+        storyRepository      = StoryRepository(bundleDataLoader: bundleDataLoader)
+        readingProgressStore = ReadingProgressStore(coreDataStack: coreDataStack)
+
+        storyManager = StoryManager(repository: storyRepository,
+                                    progressStore: readingProgressStore,
+                                    analyticsStore: analyticsStore)
+
+        checkpointHistoryManager = CheckpointHistoryManager(coreDataStack: coreDataStack)
+
+        writingProgressStore  = WritingProgressStore(coreDataStack: coreDataStack,
+                                                     childManager: childManager)
+        writingDrawingStore   = WritingDrawingStore()
+        writingSessionManager = WritingSessionManager(analyticsStore: analyticsStore,
+                                                      childManager: childManager,
+                                                      progressStore: writingProgressStore)
+
+        writingGameplayManager = WritingGameplayManager(
+            progressStore:  writingProgressStore,
+            drawingStore:   writingDrawingStore,
+            sessionManager: writingSessionManager
+        )
+        phonicsGameplayManager = PhonicsGameplayManager(analyticsStore: analyticsStore,
+                                                        childManager: childManager)
+        phonicsFlowManager = PhonicsFlowManager()
+        ocrManager   = OCRManager()
+        profileStore = ProfileStore()
+
+        speechManager            = SpeechManager()
+        speechRecognitionManager = SpeechRecognitionManager()
+        gameTimerManager         = GameTimerManager(seconds: 30)
+    }
+
+    // MARK: - Injection
+
+    func inject(into homeVC: HomeViewController) {
+        homeVC.storyManager             = storyManager
+        homeVC.writingGameplayManager   = writingGameplayManager
+        homeVC.analyticsStore           = analyticsStore
+        homeVC.childManager             = childManager
+        homeVC.checkpointHistoryManager = checkpointHistoryManager
+        homeVC.phonicsFlowManager       = phonicsFlowManager
+        homeVC.phonicsGameplayManager   = phonicsGameplayManager
+        homeVC.bundleDataLoader         = bundleDataLoader
+        homeVC.ocrManager               = ocrManager
+        homeVC.speechManager            = speechManager
+        homeVC.speechRecognitionManager = speechRecognitionManager
+        homeVC.gameTimerManager         = gameTimerManager
+        homeVC.profileStore             = profileStore
+    }
+
+    func inject(into vc: AnalyticsViewController) {
+        vc.analyticsStore           = analyticsStore
+        vc.checkpointHistoryManager = checkpointHistoryManager
+    }
+
+    func inject(into vc: ReadingPreviewViewController) {
+        vc.storyManager             = storyManager
+        vc.childManager             = childManager
+        vc.checkpointHistoryManager = checkpointHistoryManager
+    }
+
+    func inject(into vc: UploadsViewController) {
+        vc.ocrManager               = ocrManager
+        vc.storyManager             = storyManager
+        vc.childManager             = childManager
+        vc.checkpointHistoryManager = checkpointHistoryManager
+    }
+
+    func inject(into vc: SpinWheelViewController) {
+        vc.phonicsFlowManager       = phonicsFlowManager
+        vc.phonicsGameplayManager   = phonicsGameplayManager
+        vc.bundleDataLoader         = bundleDataLoader
+        vc.speechManager            = speechManager
+        vc.speechRecognitionManager = speechRecognitionManager
+        vc.gameTimerManager         = gameTimerManager
+    }
+
+    func inject(into vc: ImageLabelReadingViewController) {
+        vc.storyManager             = storyManager
+        vc.childManager             = childManager
+        vc.checkpointHistoryManager = checkpointHistoryManager
+    }
+
+    func inject(into vc: LabelReadingViewController) {
+        vc.storyManager             = storyManager
+        vc.childManager             = childManager
+        vc.checkpointHistoryManager = checkpointHistoryManager
+    }
+}

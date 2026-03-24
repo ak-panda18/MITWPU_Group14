@@ -1,0 +1,48 @@
+{
+  "working": ["W", "ER", "K", "IH", "NG"],
+  "reading": ["R", "IY", "D", "IH", "NG"],
+  "writing": ["R", "AY", "T", "IH", "NG"],
+  "playing": ["P", "L", "EY", "IH", "NG"],
+  "running": ["R", "AH", "N", "IH", "NG"],
+  "jumping": ["JH", "AH", "M", "P", "IH", "NG"],
+
+  "harvest": ["HH", "AA", "R", "V", "EH", "S", "T"],
+  "harvesting": ["HH", "AA", "R", "V", "EH", "S", "T", "IH", "NG"],
+
+  "beautiful": ["B", "Y", "UW", "T", "AH", "F", "AH", "L"],
+  "banana": ["B", "AH", "N", "AE", "N", "AH"],
+  "elephant": ["EH", "L", "AH", "F", "AH", "N", "T"],
+  "computer": ["K", "AH", "M", "P", "Y", "UW", "T", "ER"],
+  "family": ["F", "AE", "M", "AH", "L", "IY"],
+  "important": ["IH", "M", "P", "AO", "R", "T", "AH", "N", "T"],
+  "different": ["D", "IH", "F", "ER", "AH", "N", "T"],
+  "education": ["EH", "JH", "AH", "K", "EY", "SH", "AH", "N"],
+  "syllable": ["S", "IH", "L", "AH", "B", "AH", "L"],
+
+  "happy": ["HH", "AE", "P", "IY"],
+  "sad": ["S", "AE", "D"],
+  "angry": ["AE", "NG", "G", "R", "IY"],
+  "excited": ["IH", "K", "S", "AY", "T", "IH", "D"],
+
+  "school": ["S", "K", "UW", "L"],
+  "teacher": ["T", "IY", "CH", "ER"],
+  "student": ["S", "T", "UW", "D", "AH", "N", "T"],
+  "classroom": ["K", "L", "AE", "S", "R", "UW", "M"],
+
+  "mother": ["M", "AH", "DH", "ER"],
+  "father": ["F", "AA", "DH", "ER"],
+  "brother": ["B", "R", "AH", "DH", "ER"],
+  "sister": ["S", "IH", "S", "T", "ER"],
+
+  "animal": ["AE", "N", "AH", "M", "AH", "L"],
+  "children": ["CH", "IH", "L", "D", "R", "AH", "N"],
+  "people": ["P", "IY", "P", "AH", "L"],
+
+  "morning": ["M", "AO", "R", "N", "IH", "NG"],
+  "evening": ["IY", "V", "N", "IH", "NG"],
+  "night": ["N", "AY", "T"],
+
+  "friend": ["F", "R", "EH", "N", "D"],
+  "friends": ["F", "R", "EH", "N", "D", "Z"]
+}
+
