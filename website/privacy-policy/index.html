@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Aksharr — Privacy Policy</title>
+
+    <style>
+        :root {
+            --brown-dark: #4A3728;
+            --brown-medium: #7A5939;
+            --brown-cta: #855839;
+            --brown-heading: #765033;
+            --brown-muted: #5C3B24;
+
+            --gold-cta: #E3C073;
+            --gold-accent: #DEB233;
+            --gold-muted: #FCEFB8;
+            --gold-outline: #E7C76E;
+
+            --cream: #FEF9E2;
+            --cream-pale: #FDF7D7;
+            --cream-light: #FFFFF7;
+            --white: #FFFFFF;
+
+            --text-muted: #555555;
+
+            --card-radius: 25px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--cream);
+            color: var(--brown-dark);
+
+            font-family:
+                Arial,
+                "Helvetica Neue",
+                sans-serif;
+
+            line-height: 1.7;
+        }
+
+        header {
+            background: var(--gold-cta);
+            padding: 64px 24px 58px;
+            text-align: center;
+        }
+
+        .brand {
+            margin: 0;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(44px, 7vw, 72px);
+            line-height: 1.1;
+            color: var(--brown-dark);
+        }
+
+        .tagline {
+            max-width: 760px;
+            margin: 16px auto 0;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(18px, 2.5vw, 25px);
+            color: var(--brown-heading);
+        }
+
+        nav {
+            background: var(--white);
+            border-bottom: 2px solid var(--gold-muted);
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            gap: 12px;
+            padding: 14px 20px;
+
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav a {
+            display: inline-block;
+
+            padding: 9px 20px;
+
+            border-radius: 9999px;
+
+            color: var(--brown-medium);
+            text-decoration: none;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: 16px;
+
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease;
+        }
+
+        nav a:hover {
+            background: var(--cream-pale);
+            color: var(--brown-dark);
+        }
+
+        nav a.active {
+            background: var(--brown-cta);
+            color: var(--white);
+        }
+
+        main {
+            width: min(100% - 40px, 1000px);
+            margin: 0 auto;
+            padding: 50px 0 70px;
+        }
+
+        .intro {
+            text-align: center;
+            padding: 10px 20px 40px;
+        }
+
+        .intro h2 {
+            margin: 0 0 12px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(30px, 4vw, 42px);
+            color: var(--brown-dark);
+        }
+
+        .effective-date {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        section {
+            background: var(--white);
+
+            border: 2px solid var(--brown-medium);
+            border-radius: var(--card-radius);
+
+            padding: 34px;
+            margin-bottom: 28px;
+        }
+
+        section h2 {
+            margin: 0 0 18px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(26px, 3vw, 34px);
+            line-height: 1.25;
+
+            color: var(--brown-dark);
+        }
+
+        section h3 {
+            margin: 26px 0 8px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: 21px;
+            color: var(--brown-heading);
+        }
+
+        section h3:first-of-type {
+            margin-top: 8px;
+        }
+
+        p {
+            margin: 0 0 16px;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        ul {
+            margin: 14px 0 18px;
+            padding-left: 28px;
+        }
+
+        li {
+            margin-bottom: 9px;
+        }
+
+        li::marker {
+            color: var(--gold-accent);
+            font-weight: bold;
+        }
+
+        .notice {
+            background: var(--cream-pale);
+            border: 2px solid var(--gold-outline);
+            border-radius: 20px;
+
+            padding: 22px 24px;
+            margin: 20px 0;
+        }
+
+        .service-card {
+            background: var(--cream);
+            border-radius: 20px;
+
+            padding: 22px 24px;
+            margin: 16px 0;
+        }
+
+        .service-card h3 {
+            margin-top: 0;
+        }
+
+        .contact-card {
+            background: var(--cream-pale);
+            border: 2px solid var(--gold-outline);
+            border-radius: 25px;
+
+            padding: 30px;
+        }
+
+        .email {
+            display: inline-block;
+
+            margin-top: 4px;
+            padding: 10px 18px;
+
+            background: var(--brown-cta);
+            color: var(--white);
+
+            border-radius: 9999px;
+
+            text-decoration: none;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            transition:
+                background-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .email:hover {
+            background: var(--brown-dark);
+            transform: translateY(-1px);
+        }
+
+        footer {
+            background: var(--brown-dark);
+            color: var(--white);
+
+            text-align: center;
+            padding: 28px 20px;
+
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 48px 20px 44px;
+            }
+
+            nav {
+                gap: 4px;
+                padding: 10px;
+            }
+
+            nav a {
+                padding: 8px 13px;
+                font-size: 14px;
+            }
+
+            main {
+                width: min(100% - 24px, 1000px);
+                padding-top: 30px;
+            }
+
+            section {
+                padding: 24px 20px;
+                border-radius: 22px;
+            }
+
+            .service-card,
+            .contact-card,
+            .notice {
+                padding: 20px;
+            }
+
+            .intro {
+                padding-bottom: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1 class="brand">Aksharr</h1>
+
+        <p class="tagline">
+            Privacy Policy
+        </p>
+    </header>
+
+
+    <nav aria-label="Main navigation">
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/support/">
+            Support
+        </a>
+
+        <a href="/privacy-policy/" class="active">
+            Privacy Policy
+        </a>
+
+    </nav>
+
+
+    <main>
+
+        <div class="intro">
+
+            <h2>Privacy Policy</h2>
+
+            <p class="effective-date">
+                Last updated: September 22, 2026
+            </p>
+
+        </div>
+
+
+        <!-- INTRODUCTION -->
+
+        <section>
+
+            <h2>About This Privacy Policy</h2>
+
+            <p>
+                This Privacy Policy explains how Aksharr handles
+                information when you use the Aksharr app.
+            </p>
+
+            <p>
+                Aksharr is a literacy learning app designed to help
+                children develop reading, writing, and phonics skills.
+                The app is designed with children in mind, including
+                children who learn differently because of dyslexia.
+            </p>
+
+            <p>
+                We aim to handle information responsibly and to use
+                it only for providing, supporting, and improving the
+                Aksharr learning experience.
+            </p>
+
+        </section>
+
+
+        <!-- INFORMATION COLLECTED -->
+
+        <section>
+
+            <h2>Information We Collect</h2>
+
+            <p>
+                Depending on how Aksharr is used, the app may process
+                the following information:
+            </p>
+
+            <ul>
+                <li>
+                    Account information such as an email address used
+                    for authentication.
+                </li>
+
+                <li>
+                    Child profile information such as name, age, and
+                    gender.
+                </li>
+
+                <li>
+                    Learning and progress information, including
+                    reading, writing, and phonics performance.
+                </li>
+
+                <li>
+                    Reading session information such as session
+                    duration, timestamps, progress, and checkpoint
+                    results.
+                </li>
+
+                <li>
+                    Writing information such as tracing progress,
+                    accuracy, mistakes, and unlocked learning items.
+                </li>
+
+                <li>
+                    Phonics information such as exercise type,
+                    correct answers, attempts, and session information.
+                </li>
+
+                <li>
+                    A parental PIN when one is configured for access
+                    to protected analytics information.
+                </li>
+
+                <li>
+                    Profile photographs when a user chooses to add one.
+                </li>
+
+                <li>
+                    Images and documents selected or captured for the
+                    Scan &amp; Read feature.
+                </li>
+
+                <li>
+                    Speech information during reading checkpoints,
+                    where the child reads aloud for speech recognition.
+                </li>
+            </ul>
+
+            <div class="notice">
+
+                <strong>
+                    Aksharr does not use personal information for
+                    advertising.
+                </strong>
+
+                <p style="margin-top: 8px;">
+                    No advertising SDK or advertising identifier was
+                    found in the current app project.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- HOW INFORMATION IS USED -->
+
+        <section>
+
+            <h2>How We Use Information</h2>
+
+            <p>
+                Information processed by Aksharr is used to provide
+                the app's learning and account functionality.
+            </p>
+
+            <ul>
+                <li>
+                    Create and manage user accounts.
+                </li>
+
+                <li>
+                    Maintain child profiles.
+                </li>
+
+                <li>
+                    Save reading, writing, and phonics progress.
+                </li>
+
+                <li>
+                    Resume learning activities.
+                </li>
+
+                <li>
+                    Calculate and display learning progress and
+                    performance information.
+                </li>
+
+                <li>
+                    Support reading checkpoint evaluation.
+                </li>
+
+                <li>
+                    Personalize aspects of learning progression,
+                    including writing content unlocked through
+                    practice.
+                </li>
+
+                <li>
+                    Provide reminders and learning-related
+                    notifications when enabled.
+                </li>
+
+                <li>
+                    Synchronize supported information across devices
+                    through the services described below.
+                </li>
+            </ul>
+
+        </section>
+
+
+        <!-- LOCAL STORAGE -->
+
+        <section>
+
+            <h2>Information Stored on Your Device</h2>
+
+            <p>
+                Aksharr stores certain information locally on the
+                device so that learning activities and progress can
+                continue to work.
+            </p>
+
+            <p>
+                Depending on the feature, locally stored information
+                can include:
+            </p>
+
+            <ul>
+                <li>Child profile information</li>
+                <li>Reading progress and session information</li>
+                <li>Writing progress and tracing information</li>
+                <li>Phonics progress and session information</li>
+                <li>Checkpoint results</li>
+                <li>Recognized words from reading checkpoints</li>
+                <li>Parental PIN information</li>
+                <li>Profile photographs</li>
+                <li>Scanned document images</li>
+                <li>OCR-extracted text</li>
+                <li>PencilKit handwriting data</li>
+                <li>Reminder preferences</li>
+                <li>Streak and app-progress information</li>
+            </ul>
+
+            <p>
+                Scanned document images, OCR-extracted text, profile
+                photographs, and PencilKit handwriting data are stored
+                locally and were not observed being uploaded to
+                Aksharr's remote services.
+            </p>
+
+        </section>
+
+
+        <!-- FIREBASE -->
+
+        <section>
+
+            <h2>Cloud Services and Data Synchronization</h2>
+
+            <p>
+                Aksharr uses Google Firebase services for account
+                authentication and synchronization of supported
+                learning and profile information.
+            </p>
+
+
+            <div class="service-card">
+
+                <h3>Firebase Authentication</h3>
+
+                <p>
+                    Firebase Authentication is used to manage user
+                    accounts and authentication. Depending on the
+                    sign-in method used, this can include an email
+                    address and authentication information.
+                </p>
+
+            </div>
+
+
+            <div class="service-card">
+
+                <h3>Cloud Firestore</h3>
+
+                <p>
+                    Aksharr uses Cloud Firestore to synchronize
+                    supported profile and learning information.
+                </p>
+
+                <p>
+                    Information sent to Firestore can include child
+                    profile information, learning session data,
+                    reading progress, writing progress, phonics
+                    results, checkpoint information, streak information,
+                    reminder preferences, and parental-control
+                    information.
+                </p>
+
+            </div>
+
+            <p>
+                Firebase and Google services use encrypted network
+                connections for data transmission.
+            </p>
+
+        </section>
+
+
+        <!-- SPEECH -->
+
+        <section>
+
+            <h2>Microphone and Speech Recognition</h2>
+
+            <p>
+                Aksharr uses the microphone during reading checkpoints
+                where a child reads text aloud.
+            </p>
+
+            <p>
+                Apple's Speech framework is used to convert the
+                child's speech into text for reading checkpoint
+                evaluation.
+            </p>
+
+            <p>
+                The app processes microphone audio during the
+                checkpoint and does not save the raw audio as a
+                persistent audio file.
+            </p>
+
+            <p>
+                The current implementation uses Apple's speech
+                recognition service. Live audio may therefore be
+                transmitted to Apple's speech recognition service
+                during these activities.
+            </p>
+
+            <p>
+                Recognized words used by the app for checkpoint history
+                are stored as text in the app's local data.
+            </p>
+
+        </section>
+
+
+        <!-- OCR -->
+
+        <section>
+
+            <h2>Camera, Photos, and OCR</h2>
+
+            <p>
+                Aksharr provides a Scan &amp; Read feature that can
+                use the device camera or selected photos to scan
+                documents.
+            </p>
+
+            <p>
+                Apple's Vision framework performs the OCR processing
+                on the device.
+            </p>
+
+            <p>
+                Scanned images and OCR-extracted text are stored
+                locally in the app's Documents directory and were not
+                observed being uploaded to Aksharr's remote services.
+            </p>
+
+            <p>
+                Users can delete scanned documents from within the
+                Scan &amp; Read section of the app.
+            </p>
+
+            <p>
+                A profile photograph may also be selected from the
+                photo library or captured using the camera. Profile
+                photographs are stored locally and were not observed
+                being uploaded to Firestore.
+            </p>
+
+        </section>
+
+
+        <!-- ANALYTICS -->
+
+        <section>
+
+            <h2>Analytics</h2>
+
+            <p>
+                Aksharr includes its own in-app learning analytics.
+                These analytics are used to display learning progress
+                and performance information within the app.
+            </p>
+
+            <p>
+                The current project does not use a third-party
+                analytics service such as Firebase Analytics,
+                Mixpanel, Amplitude, Segment, PostHog, or Sentry.
+            </p>
+
+            <p>
+                Learning analytics can include information such as
+                reading, writing, and phonics performance, accuracy,
+                session duration, and progress.
+            </p>
+
+            <p>
+                Analytics information is displayed within the app's
+                protected analytics area.
+            </p>
+
+        </section>
+
+
+        <!-- ADVERTISING -->
+
+        <section>
+
+            <h2>Advertising and Tracking</h2>
+
+            <p>
+                Aksharr does not contain advertising.
+            </p>
+
+            <p>
+                No advertising SDKs, IDFA usage, or App Tracking
+                Transparency implementation were found in the current
+                project.
+            </p>
+
+            <p>
+                Aksharr does not use children's information for
+                targeted advertising.
+            </p>
+
+        </section>
+
+
+        <!-- CHILDREN -->
+
+        <section>
+
+            <h2>Children's Privacy</h2>
+
+            <p>
+                Aksharr is designed for children and may process
+                children's profile and learning information as part of
+                providing the app's functionality.
+            </p>
+
+            <p>
+                This can include information such as a child's name,
+                age, gender, learning progress, reading performance,
+                writing performance, phonics performance, and
+                information generated during reading checkpoints.
+            </p>
+
+            <p>
+                Some of this information is stored locally on the
+                device, while supported profile and learning
+                information can be synchronized through Firebase
+                services as described in this Privacy Policy.
+            </p>
+
+            <p>
+                Aksharr does not use children's information for
+                advertising.
+            </p>
+
+            <p>
+                We encourage parents and guardians to supervise
+                children's use of the app and to contact us if they
+                have questions about information associated with a
+                child's use of Aksharr.
+            </p>
+
+        </section>
+
+
+        <!-- THIRD PARTY SERVICES -->
+
+        <section>
+
+            <h2>Third-Party Services</h2>
+
+            <p>
+                Aksharr uses the following external services to provide
+                specific functionality:
+            </p>
+
+            <ul>
+                <li>
+                    <strong>Google Firebase Authentication</strong>
+                    — account authentication.
+                </li>
+
+                <li>
+                    <strong>Google Cloud Firestore</strong>
+                    — synchronization of supported profile and
+                    learning information.
+                </li>
+
+                <li>
+                    <strong>Google Sign-In</strong>
+                    — optional account authentication.
+                </li>
+
+                <li>
+                    <strong>Apple Speech Recognition</strong>
+                    — speech-to-text processing during reading
+                    checkpoints.
+                </li>
+
+                <li>
+                    <strong>Apple iCloud services</strong>
+                    — synchronization of supported app settings and,
+                    where configured and available, app data.
+                </li>
+            </ul>
+
+            <p>
+                These services may process information according to
+                their own privacy policies and terms.
+            </p>
+
+        </section>
+
+
+        <!-- DATA SHARING -->
+
+        <section>
+
+            <h2>Data Sharing</h2>
+
+            <p>
+                Aksharr does not sell personal information.
+            </p>
+
+            <p>
+                Information may be transmitted to the service
+                providers described in this Privacy Policy when
+                necessary to provide authentication, synchronization,
+                or speech-recognition functionality.
+            </p>
+
+            <p>
+                Profile photographs, scanned document images,
+                OCR-extracted text, and PencilKit handwriting data were
+                not observed being uploaded to the app's Firebase
+                services.
+            </p>
+
+            <p>
+                Aksharr does not share children's information with
+                advertising networks.
+            </p>
+
+        </section>
+
+
+        <!-- RETENTION -->
+
+        <section>
+
+            <h2>Data Retention and Deletion</h2>
+
+            <p>
+                Information stored locally by Aksharr generally remains
+                on the device until it is deleted through an available
+                in-app deletion function or the app is uninstalled.
+            </p>
+
+            <p>
+                Scanned documents can be deleted individually from
+                within the Scan &amp; Read section.
+            </p>
+
+            <p>
+                Aksharr also provides an account deletion function.
+                The current app implementation deletes the local
+                child data and attempts to delete the Firebase
+                Authentication account.
+            </p>
+
+            <div class="notice">
+
+                <strong>Important:</strong>
+
+                <p style="margin-top: 8px;">
+                    The current project does not confirm that all
+                    associated Firestore documents are automatically
+                    deleted when an account is deleted. Cloud data
+                    deletion may therefore require additional
+                    server-side cleanup.
+                </p>
+
+            </div>
+
+            <p>
+                Because the exact retention of remote Firebase data
+                depends on the application's Firebase configuration
+                and deletion processes, we do not make a blanket claim
+                that all remote data is immediately and permanently
+                deleted when an account is removed.
+            </p>
+
+        </section>
+
+
+        <!-- ICLOUD -->
+
+        <section>
+
+            <h2>iCloud and Cloud Synchronization</h2>
+
+            <p>
+                Aksharr uses Apple's iCloud Key-Value Storage for
+                certain app settings and progress-related information.
+            </p>
+
+            <p>
+                The project also uses Apple's
+                <code>NSPersistentCloudKitContainer</code>
+                architecture for Core Data synchronization.
+            </p>
+
+            <p>
+                Whether full Core Data CloudKit synchronization is
+                enabled for a particular production build depends on
+                the app's iCloud entitlements and the user's iCloud
+                configuration.
+            </p>
+
+        </section>
+
+
+        <!-- SECURITY -->
+
+        <section>
+
+            <h2>Security</h2>
+
+            <p>
+                Aksharr uses encrypted HTTPS/TLS connections when
+                communicating with Firebase and Google services.
+            </p>
+
+            <p>
+                Firebase authentication tokens are handled by the
+                Firebase SDK using the iOS Keychain.
+            </p>
+
+            <p>
+                The current implementation stores the optional
+                parental PIN in local UserDefaults and also
+                synchronizes it with Firestore. UserDefaults is not
+                intended as encrypted storage for sensitive
+                information.
+            </p>
+
+            <p>
+                We take reasonable technical measures to protect
+                information processed by the app, but no method of
+                electronic storage or transmission can be guaranteed
+                to be completely secure.
+            </p>
+
+        </section>
+
+
+        <!-- USER CHOICES -->
+
+        <section>
+
+            <h2>Your Choices</h2>
+
+            <p>
+                Depending on the feature, you may be able to:
+            </p>
+
+            <ul>
+                <li>
+                    Delete scanned documents from within the app.
+                </li>
+
+                <li>
+                    Remove your account using the account deletion
+                    option provided in the app.
+                </li>
+
+                <li>
+                    Control device permissions such as camera,
+                    microphone, speech recognition, and photo access
+                    through iOS settings.
+                </li>
+
+                <li>
+                    Choose whether to use optional Google Sign-In or
+                    another available authentication method.
+                </li>
+            </ul>
+
+            <p>
+                If you have a question about information associated
+                with your account or child profile, you can contact us
+                using the address below.
+            </p>
+
+        </section>
+
+
+        <!-- CHANGES -->
+
+        <section>
+
+            <h2>Changes to This Privacy Policy</h2>
+
+            <p>
+                We may update this Privacy Policy when Aksharr's
+                features, data practices, or services change.
+            </p>
+
+            <p>
+                The latest version will be published on this page,
+                together with the date it was last updated.
+            </p>
+
+        </section>
+
+
+        <!-- CONTACT -->
+
+        <section class="contact-card">
+
+            <h2>Contact Us</h2>
+
+            <p>
+                If you have questions, concerns, or requests regarding
+                this Privacy Policy or how Aksharr handles information,
+                please contact us:
+            </p>
+
+            <a
+                class="email"
+                href="mailto:aksharr.support@gmail.com"
+            >
+                aksharr.support@gmail.com
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <p>
+            &copy; 2026 Aksharr. All rights reserved.
+        </p>
+
+    </footer>
+
+</body>
+</html>

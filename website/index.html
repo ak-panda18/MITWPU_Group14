@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Aksharr</title>
+
+    <style>
+        :root {
+            --brown-dark: #4A3728;
+            --brown-medium: #7A5939;
+            --brown-cta: #855839;
+
+            --gold-cta: #E3C073;
+            --gold-accent: #DEB233;
+
+            --cream: #FEF9E2;
+            --cream-pale: #FDF7D7;
+            --white: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+
+            min-height: 100vh;
+
+            background: var(--cream);
+
+            color: var(--brown-dark);
+
+            font-family:
+                Arial,
+                "Helvetica Neue",
+                sans-serif;
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--gold-cta);
+
+            padding: 70px 24px 60px;
+
+            text-align: center;
+        }
+
+        .brand {
+            margin: 0;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(52px, 9vw, 86px);
+
+            line-height: 1.05;
+
+            color: var(--brown-dark);
+        }
+
+        .subtitle {
+            max-width: 650px;
+
+            margin: 18px auto 0;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(18px, 3vw, 26px);
+
+            line-height: 1.4;
+
+            color: var(--brown-medium);
+        }
+
+        main {
+            width: min(100% - 40px, 900px);
+
+            margin: 0 auto;
+
+            padding: 60px 0;
+
+            flex: 1;
+        }
+
+        .intro {
+            text-align: center;
+
+            margin-bottom: 38px;
+        }
+
+        .intro h2 {
+            margin: 0 0 12px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(30px, 5vw, 42px);
+
+            color: var(--brown-dark);
+        }
+
+        .intro p {
+            max-width: 650px;
+
+            margin: 0 auto;
+
+            font-size: 18px;
+
+            line-height: 1.7;
+        }
+
+        .cards {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 26px;
+        }
+
+        .card {
+            background: var(--white);
+
+            border: 2px solid var(--brown-medium);
+
+            border-radius: 25px;
+
+            padding: 34px;
+
+            text-align: center;
+
+            text-decoration: none;
+
+            color: var(--brown-dark);
+
+            transition:
+                transform 0.2s ease,
+                background-color 0.2s ease;
+        }
+
+        .card:hover {
+            background: var(--cream-pale);
+
+            transform: translateY(-3px);
+        }
+
+        .card h3 {
+            margin: 0 0 12px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: 28px;
+
+            color: var(--brown-dark);
+        }
+
+        .card p {
+            margin: 0;
+
+            color: var(--brown-medium);
+
+            line-height: 1.6;
+        }
+
+        footer {
+            background: var(--brown-dark);
+
+            color: var(--white);
+
+            text-align: center;
+
+            padding: 28px 20px;
+
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        @media (max-width: 650px) {
+            header {
+                padding: 52px 20px 46px;
+            }
+
+            main {
+                width: min(100% - 24px, 900px);
+
+                padding: 42px 0;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 28px 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+
+        <h1 class="brand">
+            Aksharr
+        </h1>
+
+        <p class="subtitle">
+            Literacy learning designed to help every child
+            build skills, confidence, and independence.
+        </p>
+
+    </header>
+
+
+    <main>
+
+        <div class="intro">
+
+            <h2>
+                How can we help?
+            </h2>
+
+            <p>
+                Find support information or learn how Aksharr
+                handles your information.
+            </p>
+
+        </div>
+
+
+        <div class="cards">
+
+            <a
+                class="card"
+                href="/support/"
+            >
+
+                <h3>
+                    Support
+                </h3>
+
+                <p>
+                    Get help using Aksharr, troubleshoot common
+                    problems, and contact our support team.
+                </p>
+
+            </a>
+
+
+            <a
+                class="card"
+                href="/privacy-policy/"
+            >
+
+                <h3>
+                    Privacy Policy
+                </h3>
+
+                <p>
+                    Learn what information Aksharr processes,
+                    how it is used, and how it is protected.
+                </p>
+
+            </a>
+
+        </div>
+
+    </main>
+
+
+    <footer>
+
+        <p>
+            &copy; 2026 Aksharr. All rights reserved.
+        </p>
+
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Support and help information for Aksharr, a literacy learning app for children."
+    >
+
+    <title>Aksharr — Support</title>
+
+    <style>
+        :root {
+            /* ================================
+               AKSHARR BRAND COLORS
+               ================================ */
+
+            --brown-dark: #4A3728;
+            --brown-medium: #7A5939;
+            --brown-cta: #855839;
+            --brown-heading: #765033;
+            --brown-muted: #5C3B24;
+
+            --gold-cta: #E3C073;
+            --gold-accent: #DEB233;
+            --gold-muted: #FCEFB8;
+            --gold-outline: #E7C76E;
+
+            --cream: #FEF9E2;
+            --cream-pale: #FDF7D7;
+            --cream-light: #FFFFF7;
+            --white: #FFFFFF;
+
+            --text-muted: #555555;
+            --text-light: #666666;
+
+            --card-radius: 25px;
+        }
+
+
+        /* ================================
+           RESET
+           ================================ */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--cream);
+            color: var(--brown-dark);
+
+            font-family:
+                Arial,
+                "Helvetica Neue",
+                sans-serif;
+
+            line-height: 1.7;
+        }
+
+
+        /* ================================
+           HEADER
+           ================================ */
+
+        header {
+            background: var(--gold-cta);
+            padding: 64px 24px 58px;
+            text-align: center;
+        }
+
+        .brand {
+            margin: 0;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(44px, 7vw, 72px);
+            line-height: 1.1;
+            color: var(--brown-dark);
+        }
+
+        .tagline {
+            max-width: 650px;
+            margin: 16px auto 0;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(18px, 2.5vw, 25px);
+            color: var(--brown-heading);
+        }
+
+
+        /* ================================
+           NAVIGATION
+           ================================ */
+
+        nav {
+            background: var(--white);
+            border-bottom: 2px solid var(--gold-muted);
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 14px 20px;
+
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav a {
+            display: inline-block;
+
+            padding: 9px 20px;
+
+            border-radius: 9999px;
+
+            color: var(--brown-medium);
+            text-decoration: none;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: 16px;
+
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease;
+        }
+
+        nav a:hover {
+            background: var(--cream-pale);
+            color: var(--brown-dark);
+        }
+
+        nav a.active {
+            background: var(--brown-cta);
+            color: var(--white);
+        }
+
+
+        /* ================================
+           MAIN CONTENT
+           ================================ */
+
+        main {
+            width: min(100% - 40px, 1000px);
+            margin: 0 auto;
+            padding: 50px 0 70px;
+        }
+
+
+        /* ================================
+           INTRO
+           ================================ */
+
+        .intro {
+            text-align: center;
+            padding: 10px 20px 40px;
+        }
+
+        .intro h2 {
+            margin: 0 0 12px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(30px, 4vw, 40px);
+            color: var(--brown-dark);
+        }
+
+        .intro p {
+            max-width: 760px;
+            margin: 0 auto;
+
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+
+        /* ================================
+           CONTENT CARDS
+           ================================ */
+
+        section {
+            background: var(--white);
+
+            border: 2px solid var(--brown-medium);
+            border-radius: var(--card-radius);
+
+            padding: 34px;
+
+            margin-bottom: 28px;
+        }
+
+        section h2 {
+            margin: 0 0 18px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: clamp(27px, 3vw, 36px);
+            line-height: 1.25;
+
+            color: var(--brown-dark);
+        }
+
+        section h3 {
+            margin: 26px 0 8px;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            font-size: 22px;
+            color: var(--brown-heading);
+        }
+
+        section h3:first-of-type {
+            margin-top: 10px;
+        }
+
+        p {
+            margin: 0 0 16px;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+
+        /* ================================
+           LISTS
+           ================================ */
+
+        ul,
+        ol {
+            margin: 14px 0 0;
+            padding-left: 28px;
+        }
+
+        li {
+            margin-bottom: 9px;
+        }
+
+        li::marker {
+            color: var(--gold-accent);
+            font-weight: bold;
+        }
+
+
+        /* ================================
+           FEATURE SUBSECTIONS
+           ================================ */
+
+        .feature {
+            background: var(--cream);
+            border-radius: 20px;
+
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        .feature h3 {
+            margin-top: 0;
+        }
+
+
+        /* ================================
+           CONTACT
+           ================================ */
+
+        .contact-card {
+            background: var(--cream-pale);
+            border: 2px solid var(--gold-outline);
+            border-radius: 25px;
+
+            padding: 28px;
+        }
+
+        .contact-card h2 {
+            margin-bottom: 12px;
+        }
+
+        .email {
+            display: inline-block;
+
+            margin-top: 4px;
+            padding: 10px 18px;
+
+            background: var(--brown-cta);
+            color: var(--white);
+
+            border-radius: 9999px;
+
+            text-decoration: none;
+
+            font-family:
+                "Arial Rounded MT Bold",
+                "Nunito",
+                "Varela Round",
+                sans-serif;
+
+            transition:
+                background-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .email:hover {
+            background: var(--brown-dark);
+            transform: translateY(-1px);
+        }
+
+
+        /* ================================
+           FEEDBACK
+           ================================ */
+
+        .feedback {
+            background: var(--cream-light);
+        }
+
+
+        /* ================================
+           FOOTER
+           ================================ */
+
+        footer {
+            background: var(--brown-dark);
+            color: var(--white);
+
+            text-align: center;
+
+            padding: 28px 20px;
+
+            font-size: 14px;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+
+        /* ================================
+           RESPONSIVE DESIGN
+           ================================ */
+
+        @media (max-width: 700px) {
+
+            header {
+                padding: 48px 20px 44px;
+            }
+
+            nav {
+                gap: 4px;
+                padding: 10px;
+            }
+
+            nav a {
+                padding: 8px 13px;
+                font-size: 14px;
+            }
+
+            main {
+                width: min(100% - 24px, 1000px);
+                padding-top: 30px;
+            }
+
+            section {
+                padding: 24px 20px;
+                border-radius: 22px;
+            }
+
+            .feature,
+            .contact-card {
+                padding: 20px;
+            }
+
+            .intro {
+                padding-bottom: 28px;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <!-- ================================
+         HEADER
+         ================================ -->
+
+    <header>
+        <h1 class="brand">Aksharr</h1>
+
+        <p class="tagline">
+            Learning support for every child.
+        </p>
+    </header>
+
+
+    <!-- ================================
+         NAVIGATION
+         ================================ -->
+
+    <nav aria-label="Main navigation">
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/support/" class="active">
+            Support
+        </a>
+
+        <a href="/privacy-policy/">
+            Privacy Policy
+        </a>
+
+    </nav>
+
+
+    <!-- ================================
+         MAIN CONTENT
+         ================================ -->
+
+    <main>
+
+        <div class="intro">
+
+            <h2>Support</h2>
+
+            <p>
+                We're here to help you and your child get the most
+                out of Aksharr.
+            </p>
+
+        </div>
+
+
+        <!-- ABOUT AKSHARR -->
+
+        <section>
+
+            <h2>Welcome to Aksharr</h2>
+
+            <p>
+                <strong>Every child learns differently.</strong>
+            </p>
+
+            <p>
+                Aksharr brings together the three foundations of
+                literacy — <strong>reading, writing, and phonics</strong>
+                — in one focused, distraction-free learning experience
+                designed to help children build skills, confidence,
+                and independence.
+            </p>
+
+            <p>
+                Whether a child is just beginning to read and write,
+                needs additional practice, or learns differently
+                because of dyslexia, Aksharr aims to give every child
+                the right tools to learn, without making them feel
+                different.
+            </p>
+
+        </section>
+
+
+        <!-- HOW TO USE -->
+
+        <section>
+
+            <h2>How to Use Aksharr</h2>
+
+            <p>
+                Aksharr provides three core areas of literacy practice.
+            </p>
+
+
+            <div class="feature">
+
+                <h3>📖 Reading</h3>
+
+                <p>
+                    Build reading confidence step by step.
+                </p>
+
+                <ul>
+                    <li>
+                        Work through three progressive reading levels
+                        that gradually move from highly accessible
+                        layouts to standard reading formats.
+                    </li>
+
+                    <li>
+                        Use phonetic word breakdowns to help decode
+                        unfamiliar words.
+                    </li>
+
+                    <li>
+                        Use read-aloud support as an additional
+                        learning pathway.
+                    </li>
+
+                    <li>
+                        Complete reading checkpoints that assess
+                        spoken reading and track progress.
+                    </li>
+                </ul>
+
+                <p>
+                    The goal is to help children grow beyond a
+                    simplified reading environment and develop
+                    greater reading confidence.
+                </p>
+
+            </div>
+
+
+            <div class="feature">
+
+                <h3>✏️ Writing</h3>
+
+                <p>
+                    Build the right habits from the start.
+                </p>
+
+                <ul>
+                    <li>
+                        Practise letters, numbers, and words through
+                        tracing activities.
+                    </li>
+
+                    <li>
+                        Receive real-time tracing accuracy feedback.
+                    </li>
+
+                    <li>
+                        Follow guided practice to reinforce correct
+                        formation.
+                    </li>
+
+                    <li>
+                        Develop the practice needed to build writing
+                        skills and muscle memory.
+                    </li>
+                </ul>
+
+            </div>
+
+
+            <div class="feature">
+
+                <h3>🔤 Phonics</h3>
+
+                <p>
+                    Turn sounds into a foundation for literacy.
+                </p>
+
+                <p>
+                    Aksharr includes five interactive phonics games
+                    targeting different areas of phonological
+                    development.
+                </p>
+
+                <p>
+                    These activities help children:
+                </p>
+
+                <ul>
+                    <li>
+                        Connect sounds with letters
+                    </li>
+
+                    <li>
+                        Practise phonological skills
+                    </li>
+
+                    <li>
+                        Decode unfamiliar words
+                    </li>
+
+                    <li>
+                        Develop stronger spelling skills
+                    </li>
+                </ul>
+
+            </div>
+
+        </section>
+
+
+        <!-- DYSLEXIA -->
+
+        <section>
+
+            <h2>Designed With Dyslexia in Mind</h2>
+
+            <p>
+                Dyslexic children aren't less capable of learning.
+                They may simply need the right tools and the right
+                implementation.
+            </p>
+
+            <p>
+                Aksharr uses:
+            </p>
+
+            <ul>
+                <li>Accessible layouts</li>
+                <li>Structured progression</li>
+                <li>Phonetic support</li>
+                <li>Auditory reinforcement</li>
+                <li>Interactive practice</li>
+                <li>Real-time feedback</li>
+            </ul>
+
+            <p>
+                These features are designed to reduce unnecessary
+                barriers while helping children build literacy skills.
+            </p>
+
+            <p>
+                While dyslexic learners are at the heart of Aksharr's
+                design, the app is made for <strong>every child</strong>.
+            </p>
+
+        </section>
+
+
+        <!-- WHO IT IS FOR -->
+
+        <section>
+
+            <h2>Who Is Aksharr For?</h2>
+
+            <p>
+                Aksharr is designed for children learning to read,
+                write, and understand sounds.
+            </p>
+
+            <p>
+                It can be especially useful for:
+            </p>
+
+            <ul>
+                <li>Early learners</li>
+                <li>Developing readers</li>
+                <li>Children practising handwriting</li>
+                <li>Children building phonics skills</li>
+                <li>Children with dyslexia</li>
+                <li>Parents looking for one complete literacy app</li>
+            </ul>
+
+        </section>
+
+
+        <!-- TROUBLESHOOTING -->
+
+        <section>
+
+            <h2>Common Troubleshooting</h2>
+
+
+            <h3>An activity isn't working as expected</h3>
+
+            <p>
+                Please close and reopen Aksharr and try the activity
+                again.
+            </p>
+
+            <p>
+                If the problem continues, please contact us and tell
+                us which activity you were using and what happened.
+            </p>
+
+
+            <h3>Audio or read-aloud support isn't working</h3>
+
+            <p>
+                Please check that your device's volume is turned on
+                and try the activity again.
+            </p>
+
+            <p>
+                If the issue continues, contact us with details about
+                what happened.
+            </p>
+
+
+            <h3>My progress doesn't appear as expected</h3>
+
+            <p>
+                Please close and reopen Aksharr and check your
+                progress again.
+            </p>
+
+            <p>
+                If the issue continues, please contact us and describe
+                what you were doing when the problem occurred.
+            </p>
+
+        </section>
+
+
+        <!-- CONTACT -->
+
+        <section class="contact-card">
+
+            <h2>Need Help?</h2>
+
+            <p>
+                If you have a question about Aksharr, encounter a
+                problem, or need assistance using the app, please
+                contact us:
+            </p>
+
+            <p>
+                <strong>Email:</strong>
+            </p>
+
+            <a
+                class="email"
+                href="mailto:aksharr.support@gmail.com"
+            >
+                aksharr.support@gmail.com
+            </a>
+
+            <p style="margin-top: 20px;">
+                When reporting a problem, please include:
+            </p>
+
+            <ul>
+                <li>The activity you were using</li>
+                <li>What happened</li>
+                <li>What you expected to happen</li>
+                <li>
+                    Any other details that may help us understand
+                    the issue
+                </li>
+            </ul>
+
+        </section>
+
+
+        <!-- FEEDBACK -->
+
+        <section class="feedback">
+
+            <h2>Feedback &amp; Suggestions</h2>
+
+            <p>
+                We would love to hear from parents, teachers,
+                educators, and other Aksharr users.
+            </p>
+
+            <p>
+                If you have feedback about your experience, encounter
+                something that could be improved, or have a suggestion
+                for a future feature, please contact us:
+            </p>
+
+            <p>
+                <a
+                    class="email"
+                    href="mailto:aksharr.support@gmail.com"
+                >
+                    aksharr.support@gmail.com
+                </a>
+            </p>
+
+            <p style="margin-top: 20px;">
+                Your feedback can help us improve Aksharr and make the
+                learning experience more useful for children.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================================
+         FOOTER
+         ================================ -->
+
+    <footer>
+
+        <p>
+            &copy; 2026 Aksharr. All rights reserved.
+        </p>
+
+    </footer>
+
+</body>
+</html>
