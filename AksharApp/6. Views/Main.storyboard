@@ -306,6 +306,9 @@
                                                                     <directionalEdgeInsets key="contentInsets" top="0.0" leading="41" bottom="0.0" trailing="0.0"/>
                                                                     <color key="baseBackgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                 </buttonConfiguration>
+                                                                <connections>
+                                                                    <action selector="appleSignInTapped:" destination="fsq-Xf-QK8" eventType="touchUpInside" id="aP1-Si-Tp1"/>
+                                                                </connections>
                                                             </button>
                                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Rl8-zx-52y" userLabel="googleButton">
                                                                 <rect key="frame" x="0.0" y="56" width="260" height="40"/>
@@ -416,6 +419,7 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="appleButton" destination="NjA-gc-qg1" id="aP2-Ob-Tp2"/>
                         <outlet property="googleButton" destination="Rl8-zx-52y" id="TcW-6i-ohZ"/>
                         <outlet property="scrollView" destination="Uwr-sZ-bip" id="g6F-dM-nlJ"/>
                         <outletCollection property="textFields" destination="Syy-Bo-YK3" collectionClass="NSMutableArray" id="GBU-Gk-sBC"/>

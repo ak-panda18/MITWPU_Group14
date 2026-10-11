@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseAuth
 
 class HomeViewController: UIViewController {
 
@@ -28,6 +29,13 @@ class HomeViewController: UIViewController {
     var gameTimerManager: GameTimerManager!
     var profileStore: ProfileStore!
     var skipManager: SkipManager!
+
+    // MARK: - Last active module (per account)
+    // This used to be one global UserDefaults key, so account B inherited account A's
+    // "continue writing / reading" state after a log out + log in on the same device.
+    private var lastModuleKey: String {
+        "LastActiveModule_\(Auth.auth().currentUser?.uid ?? "guest")"
+    }
 
     // MARK: - Lifecycle
     private func verifyDependencies() {
@@ -66,9 +74,13 @@ class HomeViewController: UIViewController {
         nc.addObserver(self, selector: #selector(iCloudDataDidChange), name: .profileStoreNeedsReload, object: nil)
     }
 
+    /// Posted from Core Data / iCloud / Firestore callbacks, which are not guaranteed to be on
+    /// the main thread, so hop to main before touching UI.
     @objc private func iCloudDataDidChange() {
-        updateDashboardState()
-        updateProfileButtonImage()
+        DispatchQueue.main.async { [weak self] in
+            self?.updateDashboardState()
+            self?.updateProfileButtonImage()
+        }
     }
 
     deinit {
@@ -236,7 +248,7 @@ class HomeViewController: UIViewController {
     }
 
     private func updateDashboardState() {
-        let lastModule = UserDefaults.standard.string(forKey: "LastActiveModule") ?? "reading"
+        let lastModule = UserDefaults.standard.string(forKey: lastModuleKey) ?? "reading"
         if lastModule == "reading" {
             teddyImageView.image = UIImage(named: "reader_teddy")
             if let (title, isNew) = storyManager.getLastActiveStoryDetails() {
@@ -266,7 +278,7 @@ class HomeViewController: UIViewController {
         }
 
         if segue.identifier == "readingSegue" {
-            UserDefaults.standard.set("reading", forKey: "LastActiveModule")
+            UserDefaults.standard.set("reading", forKey: lastModuleKey)
             if let vc = segue.destination as? ReadingPreviewViewController {
                 vc.storyManager             = storyManager
                 vc.childManager             = childManager
@@ -274,7 +286,7 @@ class HomeViewController: UIViewController {
                 vc.skipManager              = skipManager
             }
         } else if segue.identifier == "writingSegue" {
-            UserDefaults.standard.set("writing", forKey: "LastActiveModule")
+            UserDefaults.standard.set("writing", forKey: lastModuleKey)
             if let vc = segue.destination as? WritingPreviewViewController {
                 vc.writingGameplayManager = writingGameplayManager
             }
@@ -312,7 +324,7 @@ class HomeViewController: UIViewController {
         performSegue(withIdentifier: "ocrSegue", sender: nil)
     }
     @IBAction func continueTapped(_ sender: UIButton) {
-        let lastModule = UserDefaults.standard.string(forKey: "LastActiveModule") ?? "reading"
+        let lastModule = UserDefaults.standard.string(forKey: lastModuleKey) ?? "reading"
         if lastModule == "reading" { navigateToReading() } else { navigateToWriting() }
     }
 }

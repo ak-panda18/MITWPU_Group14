@@ -1,4 +1,5 @@
 import Foundation
+import FirebaseAuth
 
 final class AppDependencyContainer {
 
@@ -61,8 +62,8 @@ final class AppDependencyContainer {
     let streakStore: StreakStore
     
     // MARK: - Init
-    init() {
-        coreDataStack    = CoreDataStack()
+    init(coreDataStack: CoreDataStack = CoreDataStack()) {
+        self.coreDataStack = coreDataStack
         bundleDataLoader = BundleDataLoader()
 
         childManager = ChildManager(coreDataStack: coreDataStack)
@@ -83,7 +84,7 @@ final class AppDependencyContainer {
 
         writingProgressStore  = WritingProgressStore(coreDataStack: coreDataStack,
                                                      childManager: childManager)
-        writingDrawingStore   = WritingDrawingStore()
+        writingDrawingStore   = WritingDrawingStore(childManager: childManager)
         writingSessionManager = WritingSessionManager(analyticsStore: analyticsStore,
                                                       childManager: childManager,
                                                       progressStore: writingProgressStore)
@@ -96,7 +97,8 @@ final class AppDependencyContainer {
         phonicsGameplayManager = PhonicsGameplayManager(analyticsStore: analyticsStore,
                                                         childManager: childManager)
         // uid for key-scoping: prefer Firebase UID, fall back to CoreData UUID
-        let uid = childManager.currentChild.firebaseUID
+        let uid = Auth.auth().currentUser?.uid
+                  ?? childManager.currentChild.firebaseUID
                   ?? childManager.currentChild.id?.uuidString
                   ?? "unknown"
         phonicsFlowManager = PhonicsFlowManager(uid: uid)
@@ -128,6 +130,10 @@ final class AppDependencyContainer {
         readingProgressStore.syncService = syncService
         writingProgressStore.syncService = syncService
         childManager.syncService         = syncService
+        
+        streakStore.onDatesChanged = { [weak syncService] dates in
+            syncService?.pushStreakDates(dates)
+        }
     }
 
     // MARK: - Injection

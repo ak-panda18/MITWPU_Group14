@@ -181,6 +181,9 @@ final class WritingProgressStore {
     }
 
     private func migrateExternalJSONIfNeeded() {
+        // Skip while signed out: the guest child is not a real account.
+        guard childManager.currentChild.managedObjectContext != nil else { return }
+
         let url = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("writing_progress.json")
