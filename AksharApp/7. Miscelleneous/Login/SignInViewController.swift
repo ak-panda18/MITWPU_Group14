@@ -3,6 +3,8 @@ import FirebaseAuth
 import GoogleSignIn
 import FirebaseCore
 import os.log
+import AuthenticationServices
+import CryptoKit
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "AksharApp", category: "SignInViewController")
 
@@ -11,8 +13,12 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet var textFields: [UITextField]!
     @IBOutlet var scrollView: UIScrollView!
     @IBOutlet weak var googleButton: UIButton!
+    @IBOutlet weak var appleButton: UIButton!
     
     var childManager: ChildManager!
+
+    /// Raw (unhashed) nonce for the in-flight Apple request. Regenerated for every request.
+    private var currentNonce: String?
 
     private func verifyDependencies() -> Bool {
         // SignInViewController is the storyboard's initialViewController, so iOS instantiates
@@ -53,7 +59,7 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
 
                 if result?.user.isEmailVerified == false {
                     try? Auth.auth().signOut()
-                    self.showAlert("Please verify your email before signing in. Check your inbox for the verification link.")
+                    self.showAlert("Please verify your email before signing in. Check your inbox for the verification link, and look in your spam or junk folder too.")
                     return
                 }
 
@@ -110,6 +116,53 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
                 }
             }
         }
+    }
+
+    // MARK: - Apple Sign In
+    @IBAction func appleSignInTapped(_ sender: UIButton) {
+        guard childManager != nil else { return }
+
+        // Fresh nonce for every request — never reuse.
+        guard let nonce = randomNonceString() else {
+            currentNonce = nil
+            logger.error("SignInVC: Apple sign-in aborted – secure nonce generation failed")
+            showAlert("Apple sign in failed. Please try again.")
+            return
+        }
+        currentNonce = nonce
+
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)   // Apple gets the HASHED nonce; Firebase later gets the raw one.
+
+        sender.isEnabled = false
+
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        controller.performRequests()
+    }
+
+    private func randomNonceString(length: Int = 32) -> String? {
+        precondition(length > 0)
+
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        guard errorCode == errSecSuccess else {
+            logger.error("SignInVC: SecRandomCopyBytes failed with OSStatus \(errorCode)")
+            return nil
+        }
+
+        let charset: [Character] =
+            Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+
+        return String(randomBytes.map { charset[Int($0) % charset.count] })
+    }
+
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
     }
 
     // MARK: - Navigation to Sign Up
@@ -186,6 +239,94 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+}
+
+// MARK: - Apple Sign In (ASAuthorizationController)
+extension SignInViewController: ASAuthorizationControllerDelegate {
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            appleButton.isEnabled = true
+            currentNonce = nil
+            showAlert("Apple sign in failed. Please try again.")
+            return
+        }
+
+        guard let rawNonce = currentNonce else {
+            logger.error("SignInVC: Apple callback received without a pending nonce")
+            appleButton.isEnabled = true
+            showAlert("Apple sign in failed. Please try again.")
+            return
+        }
+
+        guard let tokenData = appleIDCredential.identityToken,
+              let idTokenString = String(data: tokenData, encoding: .utf8) else {
+            logger.error("SignInVC: Apple credential had no readable identity token")
+            appleButton.isEnabled = true
+            currentNonce = nil
+            showAlert("Apple sign in failed. Please try again.")
+            return
+        }
+
+        // Firebase receives the RAW nonce; fullName is only delivered by Apple on first authorization.
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: rawNonce,
+            fullName: appleIDCredential.fullName
+        )
+        currentNonce = nil
+
+        Auth.auth().signIn(with: credential) { [weak self] authResult, error in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                self.appleButton.isEnabled = true
+
+                if let error {
+                    let nsError = error as NSError
+                    logger.error("SignInVC: Apple Firebase sign-in failed – code \(nsError.code) domain \(nsError.domain)")
+                    if AuthErrorCode(rawValue: nsError.code) == .accountExistsWithDifferentCredential {
+                        self.showAlert("An account already exists with this email using a different sign-in method. Please sign in with that method.")
+                    } else {
+                        self.showAlert("Apple sign in failed. Please try again.")
+                    }
+                    return
+                }
+                guard let uid = authResult?.user.uid else { return }
+                self.childManager.resolveChild(uid: uid)
+                self.goToHome()
+            }
+        }
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        DispatchQueue.main.async {
+            self.appleButton.isEnabled = true
+            self.currentNonce = nil
+
+            let nsError = error as NSError
+            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+                return   // User intentionally cancelled — stay on screen quietly.
+            }
+            logger.error("SignInVC: Apple authorization failed – domain \(nsError.domain) code \(nsError.code)")
+            self.showAlert("Apple sign in failed. Please try again.")
+        }
+    }
+}
+
+extension SignInViewController: ASAuthorizationControllerPresentationContextProviding {
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        if let window = view.window { return window }
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if let window = scenes.compactMap({ $0.windows.first }).first { return window }
+        if let scene = scenes.first { return UIWindow(windowScene: scene) }
+        return UIWindow(frame: .zero)   // Unreachable in practice: a tapped button implies a live scene.
     }
 }
 

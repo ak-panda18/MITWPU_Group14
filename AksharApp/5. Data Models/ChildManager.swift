@@ -14,50 +14,62 @@ final class ChildManager {
     // Injected after both objects are created in AppDependencyContainer.
     weak var syncService: FirestoreSyncService?
 
+    // True only when `currentChild` belongs to a signed-in account (not the signed-out guest).
+    var hasSignedInChild: Bool {
+        currentChild.managedObjectContext != nil && currentChild.firebaseUID != nil
+    }
+
     // MARK: - Init
     init(coreDataStack: CoreDataStack) {
         self.coreData = coreDataStack
-        currentChild  = ChildManager.resolveActiveChild(
-            context: coreDataStack.context,
-            activeKey: "activeChildId",
-            coreDataStack: coreDataStack
-        )
+        if let uid = Auth.auth().currentUser?.uid,
+           let match = ChildManager.fetchChild(uid: uid, context: coreDataStack.context) {
+            currentChild = match
+        } else {
+            currentChild = ChildManager.makeGuestChild(context: coreDataStack.context)
+        }
     }
 
     // MARK: - Firebase UID
     func linkFirebaseUID(_ uid: String) {
+        guard currentChild.managedObjectContext != nil else { return }
         currentChild.firebaseUID = uid
         coreData.saveContext()
-        iCloudKeyValueStore.shared.set(uid, forKey: "firebaseUID")
+        UserDefaults.standard.set(uid, forKey: "firebaseUID")
     }
 
+    // Finds (or creates) the child that belongs to this Firebase UID and makes it current.
     func resolveChild(uid: String) {
-        let request: NSFetchRequest<ChildEntity> = ChildEntity.fetchRequest()
-        request.predicate  = NSPredicate(format: "firebaseUID == %@", uid)
-        request.fetchLimit = 1
-
-        if let match = try? coreData.context.fetch(request).first {
+        if let match = ChildManager.fetchChild(uid: uid, context: coreData.context) {
             logger.info("ChildManager: resolved existing child id=\(match.id?.uuidString ?? "nil")")
             currentChild = match
-            iCloudKeyValueStore.shared.set(match.id?.uuidString, forKey: activeKey)
         } else {
             logger.info("ChildManager: no entity found for uid \(uid) — creating new ChildEntity")
             let child         = ChildEntity(context: coreData.context)
             child.id          = UUID()
             child.firebaseUID = uid
-            child.name        = Auth.auth().currentUser?.displayName ?? "Child"
-            child.firstName   = Auth.auth().currentUser?.displayName ?? ""
+            let displayName   = Auth.auth().currentUser?.displayName
+            child.name        = displayName ?? "Child"
+            child.firstName   = displayName ?? ""
             child.createdAt   = Date()
             coreData.saveContext()
             currentChild = child
-            iCloudKeyValueStore.shared.set(child.id?.uuidString, forKey: activeKey)
-            iCloudKeyValueStore.shared.set(uid, forKey: "firebaseUID")
         }
+        UserDefaults.standard.set(currentChild.id?.uuidString, forKey: activeKey)
+        UserDefaults.standard.set(uid, forKey: "firebaseUID")
+    }
+
+    // Call on sign-out: drops back to the un-persisted guest so nothing can write to the old account.
+    func clearCurrentChild() {
+        currentChild = ChildManager.makeGuestChild(context: coreData.context)
+        UserDefaults.standard.removeObject(forKey: activeKey)
+        UserDefaults.standard.removeObject(forKey: "firebaseUID")
     }
 
     // MARK: - Profile data save
     func saveProfileData() {
         coreData.saveContext()
+        guard hasSignedInChild else { return }
         let child = currentChild
         syncService?.pushProfile(
             firstName: child.firstName ?? "",
@@ -70,11 +82,12 @@ final class ChildManager {
 
     // MARK: - Account deletion
     func deleteCurrentChild() {
-        coreData.context.delete(currentChild)
-        coreData.saveContext()
-        iCloudKeyValueStore.shared.removeObject(forKey: activeKey)
-        iCloudKeyValueStore.shared.removeObject(forKey: "firebaseUID")
-        logger.info("ChildManager: deleted current child and cleared UserDefaults keys")
+        if currentChild.managedObjectContext != nil {
+            coreData.context.delete(currentChild)
+            coreData.saveContext()
+        }
+        clearCurrentChild()
+        logger.info("ChildManager: deleted current child and cleared device-local keys")
     }
 
     // MARK: - Child Management
@@ -86,7 +99,7 @@ final class ChildManager {
 
     func setActiveChild(_ child: ChildEntity) {
         guard let id = child.id?.uuidString else { return }
-        iCloudKeyValueStore.shared.set(id, forKey: activeKey)
+        UserDefaults.standard.set(id, forKey: activeKey)
         currentChild = child
     }
 
@@ -99,29 +112,22 @@ final class ChildManager {
     }
 
     // MARK: - Private
-    private static func resolveActiveChild(
-        context: NSManagedObjectContext,
-        activeKey: String,
-        coreDataStack: CoreDataStack
-    ) -> ChildEntity {
+    private static func fetchChild(uid: String, context: NSManagedObjectContext) -> ChildEntity? {
         let request: NSFetchRequest<ChildEntity> = ChildEntity.fetchRequest()
-        if let savedId = iCloudKeyValueStore.shared.string(forKey: activeKey),
-           let uuid = UUID(uuidString: savedId) {
-            request.predicate  = NSPredicate(format: "id == %@", uuid as CVarArg)
-            request.fetchLimit = 1
-            if let match = try? context.fetch(request).first { return match }
-        }
-        request.predicate    = nil
-        request.fetchLimit   = 0
+        request.predicate       = NSPredicate(format: "firebaseUID == %@", uid)
         request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: true)]
-        if let first = try? context.fetch(request).first {
-            iCloudKeyValueStore.shared.set(first.id?.uuidString, forKey: activeKey)
-            return first
+        request.fetchLimit      = 1
+        return try? context.fetch(request).first
+    }
+
+    private static func makeGuestChild(context: NSManagedObjectContext) -> ChildEntity {
+        guard let entity = NSEntityDescription.entity(forEntityName: "ChildEntity", in: context) else {
+            fatalError("ChildManager: ChildEntity missing from the Core Data model")
         }
-        let child = ChildEntity(context: context)
-        child.id = UUID(); child.name = "Default Child"; child.createdAt = Date()
-        coreDataStack.saveContext()
-        iCloudKeyValueStore.shared.set(child.id?.uuidString, forKey: activeKey)
-        return child
+        let guest       = ChildEntity(entity: entity, insertInto: nil)
+        guest.id        = UUID()
+        guest.name      = "Guest"
+        guest.createdAt = Date()
+        return guest
     }
 }

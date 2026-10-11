@@ -15,7 +15,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet var signInStackView: UIStackView!
     @IBOutlet var signInButton: UIButton!
     @IBOutlet var textFields: [UITextField]!
-
+    
     var childManager: ChildManager!
     
     private let nameErrorLabel = UILabel()
@@ -24,7 +24,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
     private func verifyDependencies() {
         assert(childManager != nil, "childManager was not injected into \(type(of: self))")
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         verifyDependencies()
@@ -55,12 +55,12 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         }
         present(vc, animated: true)
     }
-
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         styleTextFieldsAndButton()
     }
-
+    
     // MARK: - Sign Up
     @IBAction func signUpTapped(_ sender: UIButton) {
         guard let email    = textFields[1].text?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -70,50 +70,52 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
               let confirm  = textFields[4].text,
               !email.isEmpty, !name.isEmpty, !password.isEmpty
         else { showAlert("Please fill in all fields."); return }
-
+        
         guard password.count >= 6 else { showAlert("Password must be at least 6 characters."); return }
         guard password == confirm  else { showAlert("Passwords do not match."); return }
-
+        
         sender.isEnabled = false
-
+        
         Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
             guard let self else { return }
             DispatchQueue.main.async {
                 sender.isEnabled = true
                 if let error { self.showAlert(self.friendlyError(error)); return }
-                guard let uid = result?.user.uid else { return }
-
-                let req = result?.user.createProfileChangeRequest()
-                req?.displayName = name
-                req?.commitChanges(completion: nil)
-
-                result?.user.sendEmailVerification { error in
+                guard let user = result?.user else { return }
+                
+                let req = user.createProfileChangeRequest()
+                req.displayName = name
+                req.commitChanges(completion: nil)
+                
+                user.sendEmailVerification { error in
                     if let error {
                         logger.warning("SignUpVC: verification email failed – \(error)")
                     }
                 }
-
-                let nameParts  = name.split(separator: " ", maxSplits: 1).map(String.init)
-                let firstName  = nameParts.first ?? name
-                let lastName   = nameParts.count > 1 ? nameParts[1] : ""
-                let age        = Int16(ageText) ?? 0
-
-                self.childManager.currentChild.name      = name
-                self.childManager.currentChild.firstName = firstName
-                self.childManager.currentChild.lastName  = lastName
-                self.childManager.currentChild.age       = age
-                self.childManager.linkFirebaseUID(uid)
+                
+                let nameParts = name.split(separator: " ", maxSplits: 1).map(String.init)
+                let firstName = nameParts.first ?? name
+                let lastName  = nameParts.count > 1 ? nameParts[1] : ""
+                let age       = Int16(ageText) ?? 0
+                
+                self.childManager.resolveChild(uid: user.uid)
+                
+                let child       = self.childManager.currentChild
+                child.name      = name
+                child.firstName = firstName
+                child.lastName  = lastName
+                child.age       = age
                 self.childManager.saveProfileData()
-
+                
                 self.showVerificationAlert()
             }
         }
     }
-
+    
     @IBAction func goToSignInTapped(_ sender: UIButton) {
         navigationController?.popViewController(animated: true)
     }
-
+    
     private func friendlyError(_ error: Error) -> String {
         let code = AuthErrorCode(rawValue: (error as NSError).code)
         switch code {
@@ -124,20 +126,22 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         default:                 return "Sign up failed. Please try again."
         }
     }
-
+    
     private func showAlert(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
-
+    
     private func showVerificationAlert() {
         let alert = UIAlertController(
             title: "Verify your email",
-            message: "A verification link has been sent to your email address. Please verify before signing in.",
+            message: "A verification link has been sent to your email address. If you don't see it in your inbox, please check your spam or junk folder as well. Please verify your email before signing in.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            try? Auth.auth().signOut()
+            self?.childManager.clearCurrentChild()
             self?.navigationController?.popViewController(animated: true)
         })
         present(alert, animated: true)

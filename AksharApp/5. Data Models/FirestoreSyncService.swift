@@ -18,6 +18,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 import os.log
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "AksharApp",
@@ -50,7 +51,7 @@ final class FirestoreSyncService {
     private var listeners: [ListenerRegistration] = []
 
     // MARK: - User root
-    private var uid: String = ""
+    private var uid: String { Auth.auth().currentUser?.uid ?? "" }
     private var root: CollectionReference { db.collection("users").document(uid).collection("data") }
     // Helper: sub-collection under the user doc
     private func col(_ name: String) -> CollectionReference {
@@ -72,19 +73,29 @@ final class FirestoreSyncService {
 
     // MARK: - Lifecycle
 
-    /// Call immediately after resolveChild(uid:) succeeds in SceneDelegate.
+    // Call after resolveChild(uid:) succeeds. Safe to call more than once.
     func startSync(uid: String) {
-        guard !uid.isEmpty else { return }
-        self.uid = uid
+        guard !uid.isEmpty, uid == Auth.auth().currentUser?.uid else { return }
+        stopListeners()
         logger.info("FirestoreSyncService: starting sync for uid \(uid)")
-        // Step 0: remove any CoreData records that predate child-scoping
-        // (records with a nil/empty childId from before this fix was applied).
         clearStaleLocalData()
-        // Step 1: pull remote → local (one-time on login / device switch)
-        pullAll {
-            // Step 2: start real-time listeners so remote changes appear instantly
+        pullAll { [weak self] in
+            guard let self, Auth.auth().currentUser?.uid == uid else { return }  // signed out mid-pull
+            // Tell screens to reload now that remote data is in Core Data.
+            NotificationCenter.default.post(name: .coreDataDidSyncFromCloud, object: nil)
             self.attachListeners()
         }
+    }
+
+    /// Call on sign-out to remove all listeners.
+    func stopSync() {
+        stopListeners()
+        logger.info("FirestoreSyncService: stopped sync")
+    }
+
+    private func stopListeners() {
+        listeners.forEach { $0.remove() }
+        listeners.removeAll()
     }
 
     /// Deletes local CoreData records that don't belong to the current child.
@@ -94,14 +105,6 @@ final class FirestoreSyncService {
         guard !childId.isEmpty else { return }
         readingProgressStore.clearStaleRecords(keepingChildId: childId)
         checkpointHistoryManager.clearStaleRecords(keepingChildId: childId)
-    }
-
-    /// Call on sign-out to remove all listeners.
-    func stopSync() {
-        listeners.forEach { $0.remove() }
-        listeners.removeAll()
-        uid = ""
-        logger.info("FirestoreSyncService: stopped sync")
     }
 
     // MARK: - Pull (remote → local, runs once at login)
@@ -194,16 +197,12 @@ final class FirestoreSyncService {
                 if let error { logger.error("FirestoreSyncService [pullWritingUnlocks]: \(error)") }; return
             }
             for doc in docs {
-                let category      = doc.documentID
-                let remoteIndex   = doc.data()["unlockedIndex"] as? Int ?? 0
-                let localIndex    = self.writingProgressStore.getHighestUnlockedIndex(category: category)
-                if remoteIndex > localIndex {
-                    // Replay unlock so the store's own logic sets the new high-water mark
-                    self.writingProgressStore.unlockNextItem(
-                        category: category,
-                        currentIndex: remoteIndex - 1
-                    )
-                }
+                let id = doc.documentID
+                guard let sep = id.lastIndex(of: "_"),
+                      let idx = Int(id[id.index(after: sep)...]) else { continue }
+                let category = String(id[..<sep])
+                let count    = doc.data()["mistakeCount"] as? Int ?? 0
+                self.writingProgressStore.saveMistakeCount(count, index: idx, category: category)
             }
         }
 
@@ -308,6 +307,8 @@ final class FirestoreSyncService {
                 let doc         = change.document
                 let pageIndex   = doc.data()["lastPageIndex"] as? Int ?? 0
                 let isCompleted = doc.data()["isCompleted"]   as? Bool ?? false
+                let (localPage, localDone) = self.readingProgressStore.getProgress(for: doc.documentID)
+                guard pageIndex > localPage || (isCompleted && !localDone) else { continue }
                 self.readingProgressStore.saveProgress(
                     storyId: doc.documentID,
                     pageIndex: pageIndex,

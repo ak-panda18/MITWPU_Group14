@@ -6,6 +6,27 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "AksharAp
                             category: "WritingDrawingStore")
 
 final class WritingDrawingStore {
+    
+    private let childManager: ChildManager
+
+    init(childManager: ChildManager) {
+        self.childManager = childManager
+    }
+
+    private var documents: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    
+    private var childDirectory: URL {
+        let id  = childManager.currentChild.id?.uuidString ?? "default"
+        let dir = documents
+            .appendingPathComponent("drawings", isDirectory: true)
+            .appendingPathComponent(id, isDirectory: true)
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
 
     // MARK: - Core read/write/delete
 
@@ -48,15 +69,11 @@ final class WritingDrawingStore {
     }
 
     // MARK: - Cleanup
-
-    /// Deletes every drawing file that belongs to `category`.
-    /// Call when resetting a child's progress or on account deletion.
     func deleteAllDrawings(for category: String) {
-        let docs    = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let safeCat = category.replacingOccurrences(of: " ", with: "_")
         let prefix  = "trace_\(safeCat)_"
         guard let files = try? FileManager.default.contentsOfDirectory(
-            at: docs, includingPropertiesForKeys: nil) else { return }
+            at: childDirectory, includingPropertiesForKeys: nil) else { return }
         var deleted = 0
         for file in files where file.lastPathComponent.hasPrefix(prefix) {
             do {
@@ -69,25 +86,23 @@ final class WritingDrawingStore {
         logger.info("WritingDrawingStore: purged \(deleted) file(s) for category '\(category)'")
     }
 
-    /// Deletes every drawing file managed by this store (all categories).
-    /// Call on full account deletion.
+    // Deletes every drawing for the CURRENT child. Call on account deletion.
     func deleteAllDrawings() {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        guard let files = try? FileManager.default.contentsOfDirectory(
-            at: docs, includingPropertiesForKeys: nil) else { return }
-        var deleted = 0
-        for file in files where file.lastPathComponent.hasPrefix("trace_") &&
-                                file.pathExtension == "data" {
-            do {
-                try FileManager.default.removeItem(at: file)
-                deleted += 1
-            } catch {
-                logger.error("WritingDrawingStore: could not delete \(file.lastPathComponent) – \(error)")
-            }
+        do {
+            try FileManager.default.removeItem(at: childDirectory)
+        } catch {
+            logger.error("WritingDrawingStore: could not delete child drawings – \(error)")
         }
-        logger.info("WritingDrawingStore: purged \(deleted) total drawing file(s)")
     }
 
+    // One-time cleanup of the old shared files in Documents (they can't be attributed to any account).
+    func purgeLegacyUnscopedDrawings() {
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: documents, includingPropertiesForKeys: nil) else { return }
+        for file in files where file.lastPathComponent.hasPrefix("trace_") && file.pathExtension == "data" {
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
     // MARK: - One-stage helpers
 
     func saveOneDrawing(_ drawing: PKDrawing, index: Int, category: String) {
@@ -142,8 +157,7 @@ final class WritingDrawingStore {
     // MARK: - URL builder
 
     private func url(index: Int, category: String, stage: String, part: String) -> URL {
-        let docs    = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let safeCat = category.replacingOccurrences(of: " ", with: "_")
-        return docs.appendingPathComponent("trace_\(safeCat)_\(index)_\(stage)_\(part).data")
+        return childDirectory.appendingPathComponent("trace_\(safeCat)_\(index)_\(stage)_\(part).data")
     }
 }

@@ -8,12 +8,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     var container: AppDependencyContainer?
 
+    /// One Core Data / CloudKit stack for the whole run. Containers are rebuilt around it
+    /// (on sign-in and sign-out) so the persistent store is never opened twice.
+    private lazy var coreDataStack = CoreDataStack()
+
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
                options connectionOptions: UIScene.ConnectionOptions) {
 
         guard let _ = (scene as? UIWindowScene) else { return }
 
-        let c = AppDependencyContainer()
+        let c = AppDependencyContainer(coreDataStack: coreDataStack)
         container = c
 
         iCloudKeyValueStore.shared.startSyncing()
@@ -28,6 +32,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             // Start Firestore sync — authenticated users who restart the app
             // without signing out would otherwise never get remote data.
             c.syncService.startSync(uid: currentUser.uid)
+            syncReminders(uid: currentUser.uid, container: c)
             showHome(container: c)
         } else {
             // TODO: Uncomment the condition below to only show onboarding if the user has never seen it.
@@ -83,29 +88,34 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.rootViewController = nav
     }
 
-    /// Called after successful sign-in.
-    /// Reuses the existing container — migration has already run at launch.
-    /// Only creates a fresh container if somehow none exists (should never happen).
+    // Called after successful sign-in.
+    // The container is rebuilt AFTER sign-in so uid-scoped managers (PhonicsFlowManager,
+    // SkipManager) are created with the real Firebase uid. The container that exists at this
+    // point was built while signed out, so its managers would otherwise keep a guest uid.
     func showHomeAfterAuth() {
-        guard let c = container else {
-            // Safety fallback only — container is always set in scene(_:willConnectTo:)
-            let fresh = AppDependencyContainer()
-            container = fresh
-            // Migration is intentionally omitted here — it already ran at launch.
-            // Creating a second container is the edge case; running migration again
-            // would be a no-op but adds unnecessary work.
-            if let uid = Auth.auth().currentUser?.uid {
-                fresh.childManager.resolveChild(uid: uid)
-                StreakStore.shared.configure(uid: uid)
-            }
-            _navigateHome(container: fresh)
-            return
-        }
-        if let uid = Auth.auth().currentUser?.uid {
-            c.childManager.resolveChild(uid: uid)
-            StreakStore.shared.configure(uid: uid)
-        }
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        container?.syncService.stopSync()
+
+        let c = AppDependencyContainer(coreDataStack: coreDataStack)
+        container = c
+
+        c.childManager.resolveChild(uid: uid)
+        StreakStore.shared.configure(uid: uid)
+        // sceneDidBecomeActive already fired before sign-in, so record today here.
+        c.streakStore.recordToday()
+        c.profileStore.recordAppOpen(uid: uid)
+        c.syncService.startSync(uid: uid)
+        syncReminders(uid: uid, container: c)
         _navigateHome(container: c)
+    }
+
+    /// Reminders are local notifications, so every device has to schedule its own.
+    /// Schedule from the local cache immediately, then again once Firestore's settings arrive.
+    private func syncReminders(uid: String, container c: AppDependencyContainer) {
+        c.profileStore.scheduleNotifications(uid: uid)
+        c.profileStore.fetchSettings(uid: uid) { [weak c] _, _, _, _ in
+            c?.profileStore.scheduleNotifications(uid: uid)
+        }
     }
 
     private func _navigateHome(container c: AppDependencyContainer) {
@@ -121,23 +131,25 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                           options: .transitionCrossDissolve, animations: nil)
     }
 
-    /// Called after sign-out. Clears all local user state then rebuilds the container.
+    // Called after sign-out. Clears all local user state then rebuilds the container.
     func showAuthAfterSignOut() {
-        // 1. Stop Firestore listeners before discarding the container.
         container?.syncService.stopSync()
 
-        // 2. Clear UID-scoped local state so the next user starts clean.
+        try? Auth.auth().signOut()
+
+        // The previous user's reminders must not keep firing for the next account.
+        container?.profileStore.cancelAllNotifications()
+
         container?.streakStore.reset()
         container?.phonicsFlowManager.reset()
-        container?.phonicsGameplayManager.clearAllCycleProgress()
         container?.skipManager.reset()
         container?.ocrManager.reset()
         UserDefaults.standard.removeObject(forKey: "firebaseUID")
+        UserDefaults.standard.removeObject(forKey: "activeChildId")
 
-        // 3. Flush any pending CoreData saves, then rebuild the container.
         container?.coreDataStack.flushPendingSave()
 
-        let fresh = AppDependencyContainer()
+        let fresh = AppDependencyContainer(coreDataStack: coreDataStack)
         container = fresh
 
         showAuth(container: fresh)
@@ -147,9 +159,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidDisconnect(_ scene: UIScene) {}
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        guard let firebaseUID = Auth.auth().currentUser?.uid else { return }
         container?.streakStore.recordToday()
-        guard let uid = container?.childManager.currentChild.id?.uuidString else { return }
-        container?.profileStore.recordAppOpen(uid: uid)
+        container?.profileStore.recordAppOpen(uid: firebaseUID)
     }
 
     func sceneWillResignActive(_ scene: UIScene) {}

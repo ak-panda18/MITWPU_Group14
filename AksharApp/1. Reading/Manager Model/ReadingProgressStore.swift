@@ -103,15 +103,15 @@ final class ReadingProgressStore {
 
     // MARK: - Stale record cleanup (called on login to remove pre-isolation records)
 
-    /// Deletes all StoryEntity rows whose childId doesn't match the current child.
-    /// Handles the migration period where old records had no childId set.
+    // Deletes only orphaned StoryEntity rows (no childId). Never touches other children's rows:
+    // with CloudKit sync those rows belong to other accounts, and deleting them deletes them everywhere.
     func clearStaleRecords(keepingChildId childId: String) {
         coreData.performBackgroundWrite { ctx in
             let request: NSFetchRequest<StoryEntity> = StoryEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "childId == nil OR (childId != %@)", childId)
+            request.predicate = NSPredicate(format: "childId == nil OR childId == %@", "")
             if let stale = try? ctx.fetch(request) {
                 stale.forEach { ctx.delete($0) }
-                logger.info("ReadingProgressStore: deleted \(stale.count) stale StoryEntity records")
+                logger.info("ReadingProgressStore: deleted \(stale.count) orphaned StoryEntity records")
             }
         }
     }
