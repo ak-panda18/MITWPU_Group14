@@ -102,7 +102,6 @@ class Profile_ViewController: UIViewController,
         setupProgressStatisticsRow()
         loadProfileData()
         updateStreakCard()
-        fetchStreakFromFirestore()       // merges remote streak dates in the background
         fetchProfileInfoFromFirestore()  // syncs name/gender/age/PIN from Firestore
         loadReminderState()
         checkPINStatus()
@@ -117,19 +116,14 @@ class Profile_ViewController: UIViewController,
             }
         }
 
-        // FIX 2: Recalculate the streak whenever the app returns from the background.
-        // Without this, viewDidLoad only fires once and the streak never updates
-        // after midnight or after the app is backgrounded.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(appDidBecomeActive),
-            name: UIApplication.didBecomeActiveNotification,
-            object: nil
-        )
+        // Recalculate the streak when the app returns from the background
+        let nc = NotificationCenter.default
+        nc.addObserver(self, selector: #selector(appDidBecomeActive),
+                       name: UIApplication.didBecomeActiveNotification, object: nil)
+        nc.addObserver(self, selector: #selector(streakStoreDidUpdate),
+                       name: .streakDidUpdate, object: nil)
     }
 
-    // FIX 2 (continued): Also recalculate each time this screen becomes visible,
-    // e.g. returning from a sub-screen within the same session.
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateStreakCard()
@@ -137,6 +131,11 @@ class Profile_ViewController: UIViewController,
 
     @objc private func appDidBecomeActive() {
         updateStreakCard()
+    }
+
+    // .streakDidUpdate can be posted from a Firestore/iCloud callback, so hop to main before touching UI.
+    @objc private func streakStoreDidUpdate() {
+        DispatchQueue.main.async { [weak self] in self?.updateStreakCard() }
     }
 
     override func viewDidLayoutSubviews() {
@@ -198,35 +197,28 @@ class Profile_ViewController: UIViewController,
                 if let error { logger.error("ProfileVC: fetchProfileInfo failed – \(error)") }
                 return
             }
-            let fn     = data["firstName"] as? String ?? ""
-            let ln     = data["lastName"]  as? String ?? ""
-            let gn     = data["gender"]    as? String ?? ""
-            let ageVal = data["age"]       as? Int    ?? 0
-            let pin    = data["pin"]       as? String
-
-            // Write back into CoreData so local reads stay in sync
-            let child       = self.childManager.currentChild
-            child.firstName = fn
-            child.lastName  = ln
-            child.gender    = gn
-            child.age       = Int16(ageVal)
-            if !fn.isEmpty { child.name = fn }
+            
+            let child = self.childManager.currentChild
+            if let fn = data["firstName"] as? String { child.firstName = fn; if !fn.isEmpty { child.name = fn } }
+            if let ln = data["lastName"]  as? String { child.lastName  = ln }
+            if let gn = data["gender"]    as? String { child.gender    = gn }
+            if let ag = data["age"]       as? Int    { child.age       = Int16(ag) }
             self.childManager.saveProfileData()
 
-            // Sync PIN into UserDefaults so SetPIN/VerifyPIN VCs work unchanged
-            if let pin {
+            if let pin = data["pin"] as? String {
                 UserDefaults.standard.set(pin, forKey: self.pinKey)
             } else {
                 UserDefaults.standard.removeObject(forKey: self.pinKey)
             }
 
             DispatchQueue.main.async {
+                let first = child.firstName ?? ""
                 self.applyProfileUI(
-                    firstName:   fn,
-                    lastName:    ln,
-                    gender:      gn,
-                    age:         ageVal == 0 ? "" : String(ageVal),
-                    displayName: fn.nilIfEmpty ?? Auth.auth().currentUser?.displayName ?? "Profile"
+                    firstName:   first,
+                    lastName:    child.lastName ?? "",
+                    gender:      child.gender ?? "",
+                    age:         child.age == 0 ? "" : String(child.age),
+                    displayName: first.nilIfEmpty ?? Auth.auth().currentUser?.displayName ?? "Profile"
                 )
                 self.checkPINStatus()
             }
@@ -277,145 +269,41 @@ class Profile_ViewController: UIViewController,
     }
 
     // MARK: - Streak Card
+    // Single source of truth: StreakStore (the same data Home uses). It is UID-scoped,
+    // persisted locally, and synced through Firestore (users/{uid}/streak/record).
     private func updateStreakCard() {
-        // FIX 1 + FIX 3: Use childUID (Firebase UID) as the key — not the nullable
-        // CoreData UUID. This prevents data leaking between profiles and ensures the
-        // same key is used on every device (since the Firebase UID is account-scoped).
-        let visitKey = "visitDates_\(childUID)"
-        let today    = Calendar.current.startOfDay(for: Date())
-
-        var visits = loadDates(forKey: visitKey)
-
-        if !visits.contains(today) {
-            visits.append(today)
-            // Write only today's date to Firestore using arrayUnion — this atomically
-            // adds the date without overwriting dates written by other devices.
-            recordTodayInFirestore(today: today, visitKey: visitKey)
-        }
-
-        // Prune local cache only (Firestore pruning happens in fetchStreakFromFirestore).
-        let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: today)!
-        visits = visits.filter { $0 >= cutoff }
-
-        // Save pruned list to local cache only — don't push full array to Firestore.
-        saveDatesToCache(visits, forKey: visitKey)
-
-        // Calculate consecutive-day streak working backwards from today.
-        var streak = 0
-        var check  = today
-        while visits.contains(check) {
-            streak += 1
-            check   = Calendar.current.date(byAdding: .day, value: -1, to: check)!
-        }
-        streakNumber.text = "\(streak)"
+        let store = StreakStore.shared
+        streakNumber.text = "\(store.currentStreakLength)"
 
         let dayViews = [mondayStreak, tuesdayStreak, wednesdayStreak,
                         thursdayStreak, fridayStreak, saturdayStreak, sundayStreak]
-        var comps     = Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
-        comps.weekday = 2
-        guard let monday = Calendar.current.date(from: comps) else { return }
 
-        for (i, view) in dayViews.enumerated() {
+        for (view, day) in zip(dayViews, store.currentWeekGrid()) {
             guard let view else { continue }
-            let day      = Calendar.current.date(byAdding: .day, value: i, to: monday)!
-            let isToday  = Calendar.current.isDate(day, inSameDayAs: today)
-            let isFuture = day > today
-            let visited  = visits.contains(Calendar.current.startOfDay(for: day))
-            let label    = view.subviews.first(where: { $0 is UILabel }) as? UILabel
+            let label = view.subviews.first(where: { $0 is UILabel }) as? UILabel
 
-            if isToday {
+            switch day.status {
+            case .today:
                 // Today: solid blue fill regardless of visited state
                 view.backgroundColor   = UIColor.systemBlue
                 view.layer.borderColor = UIColor.systemBlue.cgColor
                 label?.textColor       = .white
-            } else if visited && !isFuture {
+            case .visited:
                 // Past day visited: solid green fill
                 view.backgroundColor   = UIColor(red: 0.25, green: 0.80, blue: 0.35, alpha: 1.0)
                 view.layer.borderColor = UIColor.clear.cgColor
                 label?.textColor       = .white
-            } else if !isFuture {
+            case .missed:
                 // Past day missed: red outline, no fill
                 view.backgroundColor   = .white
                 view.layer.borderColor = UIColor.systemRed.cgColor
                 label?.textColor       = .systemRed
-            } else {
+            case .future:
                 // Future day: neutral grey outline
                 view.backgroundColor   = .white
                 view.layer.borderColor = UIColor.systemGray4.cgColor
                 label?.textColor       = .systemGray
             }
-        }
-    }
-
-    // FIX 3: Streak dates are stored in Firestore so they sync across devices.
-    // UserDefaults is used as a fast local cache — the UI reads from cache instantly
-    // while a background Firestore fetch keeps it in sync.
-    //
-    // Firestore path:  users/{uid}/profile/streak
-    // Field:           visitDates : [Timestamp]
-
-    private func streakRef(uid: String) -> DocumentReference {
-        Firestore.firestore()
-            .collection("users").document(uid)
-            .collection("profile").document("streak")
-    }
-
-    private func loadDates(forKey key: String) -> [Date] {
-        guard let data  = UserDefaults.standard.data(forKey: key),
-              let dates = try? JSONDecoder().decode([Date].self, from: data)
-        else { return [] }
-        return dates
-    }
-
-    /// Writes dates to UserDefaults cache only. Does NOT touch Firestore.
-    private func saveDatesToCache(_ dates: [Date], forKey key: String) {
-        if let data = try? JSONEncoder().encode(dates) {
-            UserDefaults.standard.set(data, forKey: key)
-        }
-    }
-
-    /// Atomically adds a single date to Firestore using arrayUnion.
-    /// This means two devices writing different dates simultaneously will both
-    /// be preserved — neither overwrites the other.
-    private func recordTodayInFirestore(today: Date, visitKey: String) {
-        streakRef(uid: childUID).setData(
-            ["visitDates": FieldValue.arrayUnion([Timestamp(date: today)])],
-            merge: true
-        ) { error in
-            if let error {
-                logger.error("ProfileVC: recordTodayInFirestore failed – \(error)")
-            }
-        }
-    }
-
-    /// Legacy wrapper kept so fetchStreakFromFirestore can still write a pruned
-    /// full-array back after a fetch (the only place a full overwrite is correct).
-    private func saveDates(_ dates: [Date], forKey key: String) {
-        saveDatesToCache(dates, forKey: key)
-        let timestamps = dates.map { Timestamp(date: $0) }
-        streakRef(uid: childUID).setData(["visitDates": timestamps], merge: true) { error in
-            if let error {
-                logger.error("ProfileVC: saveDates Firestore write failed – \(error)")
-            }
-        }
-    }
-
-    /// Call once on first load to pull streak dates down from Firestore
-    /// and merge with anything already in the local cache.
-    private func fetchStreakFromFirestore() {
-        let key = "visitDates_\(childUID)"
-        streakRef(uid: childUID).getDocument { [weak self] snapshot, error in
-            guard let self, let data = snapshot?.data(), error == nil else { return }
-            let remote = (data["visitDates"] as? [Timestamp] ?? [])
-                .map { Calendar.current.startOfDay(for: $0.dateValue()) }
-            var merged = self.loadDates(forKey: key)
-            for d in remote where !merged.contains(d) { merged.append(d) }
-            let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date())!
-            merged = merged.filter { $0 >= cutoff }
-            // Use saveDates (not UserDefaults directly) so the merged result
-            // is written back to Firestore and becomes visible on all other devices.
-            self.saveDates(merged, forKey: key)
-            DispatchQueue.main.async { self.updateStreakCard() }
         }
     }
 
@@ -844,22 +732,25 @@ class Profile_ViewController: UIViewController,
     private func performAccountDeletion() {
         guard let user = Auth.auth().currentUser else { return }
 
-        let context = childManager.currentChild.managedObjectContext
-        context?.delete(childManager.currentChild)
-        try? context?.save()
-
+        // Delete the Firebase account FIRST. If this fails (most commonly 17014, "recent login
+        // required") nothing local has been touched, so the user keeps their data and can retry.
+        // The old order deleted the local child before Firebase confirmed, so a failure left an
+        // account that still existed but had lost its local data.
         user.delete { [weak self] error in
             guard let self else { return }
             DispatchQueue.main.async {
                 if let error {
                     let nsError = error as NSError
                     if nsError.code == 17014 {
-                        self.showAlert("Please sign out and sign back in, then try deleting again.")
+                        self.showAlert("For security, please log out, sign back in, then try deleting your account again.")
                     } else {
                         self.showAlert("Failed to delete account. Please try again.")
                     }
                     return
                 }
+
+                // The account is gone: now remove the local copy and return to the sign-in screen.
+                self.childManager.deleteCurrentChild()
                 guard let sd = self.view.window?.windowScene?.delegate as? SceneDelegate else { return }
                 sd.showAuthAfterSignOut()
             }

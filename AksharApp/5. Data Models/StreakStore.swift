@@ -37,7 +37,7 @@ final class StreakStore {
 
     // MARK: - Configuration
 
-    /// Must be called after resolveChild(uid:) so the store reads from the correct key.
+    // Must be called after resolveChild(uid:) so the store reads from the correct key.
     func configure(uid: String) {
         guard uid != currentUID else { return }
         currentUID = uid
@@ -46,11 +46,8 @@ final class StreakStore {
 
     // MARK: - Reset (call on logout)
 
-    /// Clears in-memory state and removes the current UID-scoped UserDefaults entry.
+    // Clears in-memory state only. Never touches stored data — it belongs to that user.
     func reset() {
-        if !currentUID.isEmpty {
-            iCloudKeyValueStore.shared.removeObject(forKey: defaultsKey)
-        }
         visitedDates = []
         currentUID   = ""
     }
@@ -179,8 +176,11 @@ final class StreakStore {
         return f
     }()
 
+    var onDatesChanged: (([String]) -> Void)?
+
     private func persist() {
         iCloudKeyValueStore.shared.set(Array(visitedDates), forKey: defaultsKey)
+        onDatesChanged?(allDatesForSync)
     }
 
     private func loadFromDefaults() {
